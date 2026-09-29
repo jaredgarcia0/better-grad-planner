@@ -7,6 +7,7 @@
 
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { PrismaPg } from "@prisma/adapter-pg";
 import {
@@ -19,8 +20,10 @@ import {
   type RequirementType,
 } from "../generated/prisma/client.ts";
 
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+
 // .env may live in backend/ or at the repository root.
-config({ path: [path.join(__dirname, "../.env"), path.join(__dirname, "../../.env")], quiet: true });
+config({ path: [path.join(currentDir, "../.env"), path.join(currentDir, "../../.env")], quiet: true });
 
 interface CatalogData {
   university: { name: string; shortName?: string; websiteUrl?: string };
@@ -59,7 +62,7 @@ interface RequirementGroupData {
   children: RequirementGroupData[];
 }
 
-const DATA_DIR = path.join(__dirname, "data");
+const DATA_DIR = path.join(currentDir, "data");
 
 async function seedCatalog(tx: Prisma.TransactionClient, data: CatalogData) {
   const university =

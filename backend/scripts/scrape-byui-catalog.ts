@@ -6,10 +6,12 @@
 
 import { writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { parse, HTMLElement } from "node-html-parser";
 
 const KUALI = "https://byui.kuali.co/api/v1/catalog";
-const OUTPUT = path.join(__dirname, "../prisma/data/byui-catalog.json");
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const OUTPUT = path.join(currentDir, "../prisma/data/byui-catalog.json");
 const DEFAULT_PROGRAM_CODES = ["440"];
 
 type DegreeType = "ASSOCIATE" | "BACHELOR" | "MASTER" | "DOCTORATE" | "CERTIFICATE" | "OTHER";
