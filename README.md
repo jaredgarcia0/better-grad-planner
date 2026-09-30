@@ -15,9 +15,9 @@ Built as a web app, with a React frontend, Express backend, and PostreSQL databa
 
 ## Software Features
 
-* [ ] First feature here
-* [ ] Second feature here
-* [ ] Keep going ....
+* [ ] Full database of BYUI Programs and Courses
+* [ ] Accounts per-student
+* [ ] Class schedule planner
 
 ## Team Communication
 
