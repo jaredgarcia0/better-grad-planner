@@ -6,11 +6,13 @@ import {
   listRequirementCourseLinks,
   updateRequirementCourseLink,
 } from "../controllers/catalog.controller.js";
+import { validate } from "../middleware/validate.js";
+import { createRequirementCourseSchema, idParamsSchema, listRequirementCoursesSchema, updateRequirementCourseSchema } from "../schemas/catalog.schemas.js";
 
 export const requirementCoursesRouter = Router();
 
-requirementCoursesRouter.get("/", listRequirementCourseLinks);
-requirementCoursesRouter.post("/", createRequirementCourseLink);
-requirementCoursesRouter.get("/:id", getRequirementCourseLink);
-requirementCoursesRouter.patch("/:id", updateRequirementCourseLink);
-requirementCoursesRouter.delete("/:id", deleteRequirementCourseLink);
+requirementCoursesRouter.get("/", validate({ query: listRequirementCoursesSchema }), listRequirementCourseLinks);
+requirementCoursesRouter.post("/", validate({ body: createRequirementCourseSchema }), createRequirementCourseLink);
+requirementCoursesRouter.get("/:id", validate({ params: idParamsSchema }), getRequirementCourseLink);
+requirementCoursesRouter.patch("/:id", validate({ params: idParamsSchema, body: updateRequirementCourseSchema }), updateRequirementCourseLink);
+requirementCoursesRouter.delete("/:id", validate({ params: idParamsSchema }), deleteRequirementCourseLink);

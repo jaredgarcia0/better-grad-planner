@@ -6,11 +6,13 @@ import {
   listOfferings,
   updateOffering,
 } from "../controllers/catalog.controller.js";
+import { validate } from "../middleware/validate.js";
+import { createOfferingSchema, idParamsSchema, listOfferingsSchema, updateOfferingSchema } from "../schemas/catalog.schemas.js";
 
 export const offeringsRouter = Router();
 
-offeringsRouter.get("/", listOfferings);
-offeringsRouter.post("/", createOffering);
-offeringsRouter.get("/:id", getOffering);
-offeringsRouter.patch("/:id", updateOffering);
-offeringsRouter.delete("/:id", deleteOffering);
+offeringsRouter.get("/", validate({ query: listOfferingsSchema }), listOfferings);
+offeringsRouter.post("/", validate({ body: createOfferingSchema }), createOffering);
+offeringsRouter.get("/:id", validate({ params: idParamsSchema }), getOffering);
+offeringsRouter.patch("/:id", validate({ params: idParamsSchema, body: updateOfferingSchema }), updateOffering);
+offeringsRouter.delete("/:id", validate({ params: idParamsSchema }), deleteOffering);
