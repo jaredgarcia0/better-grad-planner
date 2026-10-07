@@ -1,5 +1,4 @@
-# better-grad-planner
-It's like grad planner, but much better
+# Better Grad-Planner
 
 ## Team Members
 Kyle Nordick
@@ -15,21 +14,22 @@ Built as a web app, with a React frontend, Express backend, and PostreSQL databa
 
 ## Software Features
 
-* [ ] Full database of BYUI Programs and Courses
+* [ ] Full Database of BYUI Programs and Courses
 * [ ] Accounts per-student
-* [ ] Class schedule planner
+* [ ] Class schedule planner 
 
 ## Team Communication
+Discord
 
 ## Team Responsibility
 
-|Responsibility                      |Team Member(s)              |
-|------------------------------------|----------------------------|
-|Conducting Meetings                 |                            |
-|Maintaining Team Assignment List    |                            |
-|Ensuring GitHub is Working          |                            |
-|Maintaining Documentation           |                            |
-|Create & Display Presentations      |                            |
-|Submit Team Assignments             |                            |
+|Responsibility                                    |Team Member(s)              |
+|----------------------------------------|----------------------------|
+|Conducting Meetings                        |   Byron                            |
+|Maintaining Team Assignment List    |   Kyle                               |
+|Ensuring GitHub is Working               |   Jared                            |
+|Maintaining Documentation              |   Kyle                              |
+|Create & Display Presentations          |   Dawson                       |
+|Submit Team Assignments                 |   Kyle                             |
 
 ## Reflections
