@@ -5,7 +5,7 @@ import {
   getPrerequisite,
   listPrerequisites,
   updatePrerequisite,
-} from "../controllers/catalog.controller.js";
+} from "../controllers/prerequisites.controller.js";
 import { validate } from "../middleware/validate.js";
 import { createPrerequisiteSchema, idParamsSchema, listPrerequisitesSchema, updatePrerequisiteSchema } from "../schemas/catalog.schemas.js";
 

@@ -5,7 +5,7 @@ import {
   getOffering,
   listOfferings,
   updateOffering,
-} from "../controllers/catalog.controller.js";
+} from "../controllers/offerings.controller.js";
 import { validate } from "../middleware/validate.js";
 import { createOfferingSchema, idParamsSchema, listOfferingsSchema, updateOfferingSchema } from "../schemas/catalog.schemas.js";
 

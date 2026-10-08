@@ -7,7 +7,7 @@ import {
   listCoursePrerequisites,
   listCourses,
   updateCourse,
-} from "../controllers/catalog.controller.js";
+} from "../controllers/courses.controller.js";
 import { validate } from "../middleware/validate.js";
 import {
   createCourseSchema,

@@ -5,7 +5,7 @@ import {
   getDepartment,
   listDepartments,
   updateDepartment,
-} from "../controllers/catalog.controller.js";
+} from "../controllers/departments.controller.js";
 import { validate } from "../middleware/validate.js";
 import { createDepartmentSchema, idParamsSchema, listDepartmentsSchema, updateDepartmentSchema } from "../schemas/catalog.schemas.js";
 

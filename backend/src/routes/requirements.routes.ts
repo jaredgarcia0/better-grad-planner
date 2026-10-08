@@ -6,7 +6,7 @@ import {
   listRequirementCourses,
   listRequirements,
   updateRequirement,
-} from "../controllers/catalog.controller.js";
+} from "../controllers/requirements.controller.js";
 import { validate } from "../middleware/validate.js";
 import { createRequirementSchema, idParamsSchema, listRequirementsSchema, universityChildQuerySchema, updateRequirementSchema } from "../schemas/catalog.schemas.js";
 

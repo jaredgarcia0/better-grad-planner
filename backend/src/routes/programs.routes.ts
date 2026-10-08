@@ -6,7 +6,7 @@ import {
   listProgramRequirements,
   listPrograms,
   updateProgram,
-} from "../controllers/catalog.controller.js";
+} from "../controllers/programs.controller.js";
 import { validate } from "../middleware/validate.js";
 import { createProgramSchema, idParamsSchema, listProgramsSchema, universityChildQuerySchema, updateProgramSchema } from "../schemas/catalog.schemas.js";
 

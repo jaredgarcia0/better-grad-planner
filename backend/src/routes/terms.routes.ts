@@ -6,7 +6,7 @@ import {
   listTermOfferings,
   listTerms,
   updateTerm,
-} from "../controllers/catalog.controller.js";
+} from "../controllers/terms.controller.js";
 import { validate } from "../middleware/validate.js";
 import { createTermSchema, idParamsSchema, listTermsSchema, universityChildQuerySchema, updateTermSchema } from "../schemas/catalog.schemas.js";
 

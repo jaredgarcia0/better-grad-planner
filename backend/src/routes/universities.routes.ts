@@ -8,7 +8,7 @@ import {
   listUniversityDepartments,
   listUniversityPrograms,
   updateUniversity,
-} from "../controllers/catalog.controller.js";
+} from "../controllers/universities.controller.js";
 import { validate } from "../middleware/validate.js";
 import {
   createUniversitySchema,
