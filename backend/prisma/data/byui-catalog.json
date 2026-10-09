@@ -1,0 +1,812 @@
+{
+  "source": {
+    "url": "https://www.byui.edu/catalog/#/programs",
+    "catalogId": "68dc4d77c3ad086d83653f48",
+    "catalogTitle": "2026-2027 BYU-Idaho Catalog",
+    "scrapedAt": "2026-09-28T18:02:57.819Z"
+  },
+  "university": {
+    "name": "Brigham Young University-Idaho",
+    "shortName": "BYU-Idaho",
+    "websiteUrl": "https://www.byui.edu"
+  },
+  "departments": [
+    {
+      "code": "ACLE",
+      "name": "Department of Academic Success and Tutoring"
+    },
+    {
+      "code": "CHEM",
+      "name": "Department of Chemistry and Biochemistry"
+    },
+    {
+      "code": "CSE",
+      "name": "Department of Computer Science and Engineering"
+    },
+    {
+      "code": "MATH",
+      "name": "Department of Mathematics"
+    },
+    {
+      "code": "PHYS",
+      "name": "Department of Physics"
+    }
+  ],
+  "courses": [
+    {
+      "code": "CHEM105",
+      "title": "General Chemistry I",
+      "description": "This is the first semester of a two-semester course designed to meet the general chemistry requirements in engineering, science, and pre-professional majors.  ",
+      "credits": 3,
+      "level": "INTRODUCTORY",
+      "departmentCode": "CHEM"
+    },
+    {
+      "code": "CSE110",
+      "title": "Introduction to Programming",
+      "description": "Introduces the fundamentals of programming and the building blocks of programming languages, including variables, decisions, calculations, loops, arrays, and input and output. Guides students in using these tools to solve problems.",
+      "credits": 2,
+      "level": "INTRODUCTORY",
+      "departmentCode": "CSE",
+      "prerequisites": [],
+      "corequisites": []
+    },
+    {
+      "code": "CSE111",
+      "title": "Programming with Functions",
+      "description": "Helps students become more organized, efficient, and powerful computer programmers by teaching them to research and call functions written by others; write, call, debug, and test their own functions; and handle errors within functions. Guides students in writing programs with functions to solve problems in many disciplines, including business, physical science, human performance, and humanities.",
+      "credits": 2,
+      "level": "INTRODUCTORY",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE110"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Complete all of the following ; Take 1 of the following courses: ; CSE110 - Introduction to Programming (2) ; -or- CS101 (last offered 2023) ; -or- CIT160 (last offered 2023) ; -or- successful completion of PathwayConnect ; -or- LUC test score of at least 110"
+    },
+    {
+      "code": "CSE170",
+      "title": "Introduction to Technical Teamwork",
+      "description": "Provides a foundation for effective participation in a technical team. Teaches students to collaborate with teammates to achieve common goals, navigate conflicts, and overcome obstacles.",
+      "credits": 2,
+      "level": "INTRODUCTORY",
+      "departmentCode": "CSE",
+      "prerequisites": [],
+      "corequisites": []
+    },
+    {
+      "code": "CSE199R",
+      "title": "Freshman Discovery Project",
+      "description": "This course is meant to be fun and exciting! Students will create a real project of their choosing that will help them to gain excitement about continuing in one of the computing majors. \n\nThis is a 2-credit course designed to provide freshman students in Computing Degrees at BYU-Idaho with the opportunity to engage in hands-on project development. This course is intended to be taken during the second semester of the freshman year. Students enrolled in CSE199R should have completed or be enrolled concurrently in CSE 111 Programming with Functions or have equivalent programming experience. \n\nStudents will have the freedom to choose and develop a project of their own interest, leveraging the skills and knowledge acquired from previous coursework or personal exploration. The course emphasizes self-directed learning and project management, as students will not be provided with formal learning materials or structured assignments. Instead, they will have the autonomy to define their project scope, set milestones, and implement solutions using appropriate technologies and methodologies. ",
+      "credits": 2,
+      "level": "INTRODUCTORY",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE110"
+        ],
+        [
+          "WDD130"
+        ]
+      ],
+      "corequisites": [
+        [
+          "CSE111",
+          "WDD131"
+        ]
+      ],
+      "prerequisiteText": "Complete 1 of the following ; Take the following course(s): ; CSE110 - Introduction to Programming (2) ; WDD130 - Web Fundamentals (2)OR ; Complete all of the following ; LUC test score of at least 110 ; Take the following course(s): ; WDD130 - Web Fundamentals (2)",
+      "corequisiteText": "Completed or concurrently enrolled in at least 1 of the following: ; CSE111 - Programming with Functions (2) ; WDD131 - Dynamic Web Fundamentals (2)"
+    },
+    {
+      "code": "CSE210",
+      "title": "Programming with Classes",
+      "description": "This course will introduce the notion of classes and objects. It will present encapsulation at a conceptual level. It will also work with inheritance and polymorphism.",
+      "credits": 2,
+      "level": "INTERMEDIATE",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE111"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Take the following course(s): ; CSE111 - Programming with Functions (2)"
+    },
+    {
+      "code": "CSE212",
+      "title": "Programming with Data Structures",
+      "description": "Introduces students to the common programming data structures with an emphasis on how to use them to solve practical, real-world problems.",
+      "credits": 2,
+      "level": "INTERMEDIATE",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE210"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Complete 1 of the following ; Take the following course(s): ; CSE210 - Programming with Classes (2) ; -or- CS165 (last offered 2023) ; -or- CIT260 (last offered 2023)"
+    },
+    {
+      "code": "CSE280",
+      "title": "Discrete Mathematics ",
+      "description": "This course introduces the mathematical topics needed to provide a solid theoretical foundation for computer science. ",
+      "credits": 3,
+      "level": "INTERMEDIATE",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE210"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Complete 1 of the following ; Take the following course(s): ; CSE210 - Programming with Classes (2) ; -or- CS165 (last offered 2023) ; -or- CS241 (last offered 2023)"
+    },
+    {
+      "code": "CSE300",
+      "title": "Professional Readiness",
+      "description": "This course prepares students to be professionals in their major by completing activities that will provide professional connections, confidence, and employability. ",
+      "credits": 1,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [],
+      "corequisites": []
+    },
+    {
+      "code": "CSE310",
+      "title": "Applied Programming",
+      "description": "This course will teach students to work in teams on large projects using new technology on self-defined projects. The class will simulate real-word programming projects with the aim of producing workable solutions that have potential impact.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE210"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Complete all of the following ; Take 1 of the following courses: ; CSE210 - Programming with Classes (2) ; -or- CS241 (last offered 2023) ; -or- CS165 (last offered 2023)"
+    },
+    {
+      "code": "CSE351",
+      "title": "Parallelism and Concurrency",
+      "description": "Introduces students to how hardware and software execute multiple tasks simultaneously. Covers programming, strategies, and mechanisms for addressing the complexities and problems that arise in concurrent execution.",
+      "credits": 2,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE212"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Complete all of the following ; Take 1 of the following courses: ; CSE212 - Programming with Data Structures (2) ; -or- CS165 (last offered 2023) ; -or- CS241 (last offered 2023)"
+    },
+    {
+      "code": "CSE370",
+      "title": "Software Engineering Principles",
+      "description": "Students learn to analyze and make decisions in software projects through all phases of the software development lifecycle, including requirements elicitation, design, testing, verification, and maintenance.",
+      "credits": 2,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [],
+      "corequisites": []
+    },
+    {
+      "code": "CSE381",
+      "title": "Algorithms and Complexity",
+      "description": "Introduces formal techniques to support the design and analysis of algorithms, focusing on both the underlying mathematical theory and practical considerations of efficiency. Topics include asymptotic complexity bounds, techniques of analysis, and algorithmic strategies. The following will be done with numerous algorithms used in modern computing solutions: Research the algorithm using AI tools to complement required reading and classroom activities; Explain the details of the algorithm methodology and performance; Implement the algorithm in an imperative programming language.\n",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE280"
+        ],
+        [
+          "CSE212"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Take the following course(s): ; CSE280 - Discrete Mathematics (3) ; CSE212 - Programming with Data Structures (2)"
+    },
+    {
+      "code": "CSE382",
+      "title": "Patterns and Data Structures",
+      "description": "Introduces students to using a functional programming language, functional programming patterns, and functional programming data structures to solve industry-related problems.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE212"
+        ],
+        [
+          "CSE280"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Take the following course(s): ; CSE212 - Programming with Data Structures (2) ; CSE280 - Discrete Mathematics (3)"
+    },
+    {
+      "code": "CSE397",
+      "title": "Professional Career Project",
+      "description": "The primary focus of this course is for students to gain significant experience using their previous knowledge to contribute to a professional project. ",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [],
+      "corequisites": []
+    },
+    {
+      "code": "CSE398",
+      "title": "Internship",
+      "description": "Internship credits are exempt from tuition charges. However, an administrative fee equal to one credit hour at the current rate of tuition will be charged for an internship course. The fee is in addition to any tuition charges for other classes. Fees are charged independently of tuition and are not subject to the 12-credit tuition cap.\n\nStudents will gain a greater vision of becoming business professionals and will establish professional career networking links with the business professionals they meet during their internship. Students will write reports and complete self-evaluations.",
+      "credits": 1,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE310"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Take the following course(s): ; CSE310 - Applied Programming (3)"
+    },
+    {
+      "code": "CSE399R",
+      "title": "Product Development Project",
+      "description": "This course is meant to be fun and exciting! Students will create a real project of their choosing that will help them to gain excitement about continuing in one of the computing majors.\n\nThis is a 2-credit course designed to provide junior students in Computing Degrees at BYU-Idaho with the opportunity to engage in hands-on project development to complete a real product. This course is intended to be taken during the junior year, any time after completing CSE 310.\n\nStudents will have the freedom to choose and develop a project of their own interest, leveraging the skills and knowledge acquired from previous coursework or personal exploration. The course emphasizes self-directed learning to create a real-world product. Students will not be provided with formal learning materials or structured assignments. Instead, they will have the autonomy to define their project scope, set milestones, and implement solutions using appropriate technologies and methodologies.\n",
+      "credits": 2,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE310",
+          "ITM310"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Take 1 of the following courses: ; CSE310 - Applied Programming (3) ; ITM310 - Applied Cloud Computing (3)"
+    },
+    {
+      "code": "CSE450",
+      "title": "Machine Learning",
+      "description": "Introduces machine learning and its use in discovering patterns in data and making predictions. Develops students' familiarity with the overall process and terms of machine learning, including how to communicate with non-technical stakeholders. Introduces a broad set of machine learning algorithms and explains both how they work and how to apply them appropriately.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": null,
+      "corequisites": [],
+      "prerequisiteText": "Complete 1 of the following ; Take the following course(s): ; DS250 - Data Science Programming (2) ; Take the following course(s): ; CSE310 - Applied Programming (3) ; MATH341 - Linear Algebra (3) ; Take the following course(s): ; CSE111 - Programming with Functions (2) ; DS350 - Data Wrangling and Visualization (3) ; Take the following course(s): ; CSE212 - Programming with Data Structures (2) ; MATH330 - Engineering Statistics (3)"
+    },
+    {
+      "code": "CSE455",
+      "title": "Developing AI Systems",
+      "description": "Prepares students to use AI in industry. Building on previous experience with machine learning modeling, students learn to design and implement end-to-end AI systems. They learn to deploy these systems into working environments and monitor them for iterative improvement.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE450"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Take the following course(s): ; CSE450 - Machine Learning (3)"
+    },
+    {
+      "code": "CSE481",
+      "title": "Massively Parallel Computation",
+      "description": "Introduces using functional programming to create massively parallel, distributed computing systems in the cloud. In support of this, students learn the impact of common computational errors found in massively parallel systems and how to avoid them.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE382"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Take the following course(s): ; CSE382 - Patterns and Data Structures (3)"
+    },
+    {
+      "code": "CSE490R",
+      "title": "Special Topics",
+      "description": "Faculty/Student consultation will determine an area of study/research that will give an advanced student greater appreciation and experience in this field. Terms of enrollment, credit, etc., will be determined by the instructor.\n\n",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [],
+      "corequisites": []
+    },
+    {
+      "code": "CSE498R",
+      "title": "Internship II",
+      "description": "Internship credits are exempt from tuition charges. However, an administrative fee equal to one credit hour at the current rate of tuition will be charged for an internship course. The fee is in addition to any tuition charges for other classes. Fees are charged independently of tuition and are not subject to the 12-credit tuition cap.\n\nStudents will gain a greater vision of becoming business professionals and will establish professional career networking links with the business professionals they meet during their internship. Students will write reports and complete self-evaluations.",
+      "credits": 1,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [],
+      "corequisites": []
+    },
+    {
+      "code": "CYBER360",
+      "title": "Advanced Scripting",
+      "description": "Systems programming, automation, and configuration using advanced scripting techniques.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE"
+    },
+    {
+      "code": "DS250",
+      "title": "Data Science Programming",
+      "description": "Builds on the general programming principles of the prerequisite course and teaches students to write programs for data science applications. Focuses on leveraging preexisting libraries to accomplish data retrieval, preparation, prediction, and analysis tasks.\n\n",
+      "credits": 2,
+      "level": "INTERMEDIATE",
+      "departmentCode": "MATH",
+      "prerequisites": [
+        [
+          "CSE110",
+          "CSE111",
+          "PH135"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Complete 1 of the following ; Take 1 of the following courses: ; CSE110 - Introduction to Programming (2) ; PH135 - Introduction to Scientific Computing in Physics (2) ; CSE111 - Programming with Functions (2) ; -or- CS101 (last offered 2023) ; -or- CS165 (last offered 2023) ; -or- CS241 (last offered 2023)"
+    },
+    {
+      "code": "DS350",
+      "title": "Data Wrangling and Visualization",
+      "description": "Applies data-driven programming to handle, format, and visualize messy and complex data. Teaches students to implement data handling techniques and the grammar of graphics process to visualize complex data.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "MATH"
+    },
+    {
+      "code": "DS460",
+      "title": "Big Data Programming and Analytics",
+      "description": "Develops big data analytics skills using R, Python, and SQL with the current industry tools for big data programming and analytics.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "MATH",
+      "prerequisites": [
+        [
+          "DS250"
+        ],
+        [
+          "CSE450",
+          "DS350",
+          "ITM327"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Complete all of the following ; Take the following course(s): ; DS250 - Data Science Programming (2)AND ; Take 1 of the following courses: ; CSE450 - Machine Learning (3) ; DS350 - Data Wrangling and Visualization (3) ; ITM327 - Data Warehousing (3)"
+    },
+    {
+      "code": "ECEN106",
+      "title": "Computer Systems",
+      "description": "This course will show you how computers work, from charge on a computer chip to pixels on your device and everything in between. This class will give a high-level overview of all these parts to give you a conceptual understanding of how everything fits together without getting bogged down in details.",
+      "credits": 2,
+      "level": "INTRODUCTORY",
+      "departmentCode": "CSE",
+      "prerequisites": [],
+      "corequisites": []
+    },
+    {
+      "code": "ITM111",
+      "title": "Introduction to Databases",
+      "description": "Covers the basic elements of database management systems. The course introduces students to the concepts of logical and physical relationships in a data model and the concepts of inner and outer joins. Students will use a computer-aided software engineering (CASE) tool to design, create, and query a database.",
+      "credits": 3,
+      "level": "INTRODUCTORY",
+      "departmentCode": "CSE"
+    },
+    {
+      "code": "ITM220",
+      "title": "SQL",
+      "description": "This course focuses on learning how to write Structured Query Language (SQL) to interact with databases for various data retrieval and reporting needs. Students will create tables, constraints, indexes, and views; insert, update, delete, and query data. SQL activities examine how to write cross joins inner joins, outer joins, common table expressions (CTEs), subqueries, and composite queries that use set operators. SQL statements explore built-in database functions, data fabrication, hierarchical queries, pivot operations, and conditional logic. ",
+      "credits": 3,
+      "level": "INTERMEDIATE",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE110",
+          "ITM111"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Complete all of the following ; Take 1 of the following courses: ; CSE110 - Introduction to Programming (2) ; ITM111 - Introduction to Databases (3) ; -or- CIT160 (last offered 2023)"
+    },
+    {
+      "code": "ITM310",
+      "title": "Applied Cloud Computing",
+      "description": "Allows students to take their cumulative knowledge and apply it to several real-world applications using a cloud computing platform. Students define project requirements, pitch their ideas, and ultimately build the solutions.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE"
+    },
+    {
+      "code": "ITM327",
+      "title": "Data Warehousing",
+      "description": "This course offers a comprehensive exploration of data engineering, focusing on the development of data-driven applications using Python and SQL. Students will engage in designing and implementing data warehouses, integrating API-driven data ingestion, and developing front-end applications for database interaction and visualization. Emphasis is placed on practical skills in data modeling, ELT processes, and full-stack application development, preparing students for real-world data engineering roles.\n ",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE"
+    },
+    {
+      "code": "ITM350",
+      "title": "DevOps",
+      "description": "DevOps is the key to building, deploying, and maintaining reliable applications efficiently in today's fast-paced software landscape. This course gives students a hands-on, practical foundation in DevOps principles, focusing on automation, collaboration, and continuous improvement in modern software development.\n\nStudents will gain proficiency in Git for version control, master branching strategies and code reviews, and understand its crucial role in agile development and MVP delivery. A major focus of the course is designing and implementing Continuous Integration and Continuous Deployment (CI/CD) pipelines, which enable teams to deliver high-quality software faster and confidently deploy applications into production-ready environments.\n\nStudents learn the practical skills and foundational knowledge necessary to implement DevOps best practices in real-world environments, improving software development efficiency, maintainability, and operational reliability.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "CSE210",
+          "WDD131"
+        ],
+        [
+          "CSE212",
+          "CSE310",
+          "CYBER360",
+          "ITM310",
+          "WDD230",
+          "WDD231"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Complete all of the following ; Take 1 of the following courses: ; CSE210 - Programming with Classes (2) ; WDD131 - Dynamic Web Fundamentals (2)AND ; Take 1 of the following courses: ; WDD230 - Web Frontend Development I (3) ; WDD231 - Web Frontend Development I (2) ; CYBER360 - Advanced Scripting (3) ; CSE310 - Applied Programming (3) ; CSE212 - Programming with Data Structures (2) ; ITM310 - Applied Cloud Computing (3)"
+    },
+    {
+      "code": "MATH101",
+      "title": "Intermediate Algebra",
+      "description": "This course will cover the fundamental operations of algebra, properties of exponents, solving linear, fractional, radical and quadratic equations, graphing linear, and quadratic functions.  Math 101 may not be taken for credit if MATH 110X (FDMAT 110) has been completed with a grade of \"B\" or higher.",
+      "credits": 4,
+      "level": "INTRODUCTORY",
+      "departmentCode": "ACLE"
+    },
+    {
+      "code": "MATH109",
+      "title": "Precalculus",
+      "description": "This course includes a combination of College Algebra and Trigonometry. It is intended to prepare students for Calculus or other math and science courses.  Elementary analysis of functions having discrete or connected domains, methods of solving equations, and systems of equations and matrices will be explored.  Triangle relationships, graphs of periodic functions, trigonometric identities, inverse trigonometric functions, and applications of trigonometry will also be covered.",
+      "credits": 5,
+      "level": "INTRODUCTORY",
+      "departmentCode": "MATH"
+    },
+    {
+      "code": "MATH110X",
+      "title": "College Algebra",
+      "description": "This course includes the study of elementary analysis of functions having discrete or connected domains. Methods of solving equations. Systems of equations and matrices. Strong connections to real world applications of functions and matrices will be made. Students who will take Calculus are strongly encouraged to take Math 109 instead of Math 110X.\nALEKS information can be found here: http://www.byui.edu/mathematics/aleks",
+      "credits": 3,
+      "level": "INTRODUCTORY",
+      "departmentCode": "MATH"
+    },
+    {
+      "code": "MATH111",
+      "title": "Trigonometry",
+      "description": "This course studies the six trigonometric functions and their inverses. Topics include: measuring triangles, vectors, graphs, and solving equations. Applications of trigonometry will be emphasized throughout the course.",
+      "credits": 2,
+      "level": "INTRODUCTORY",
+      "departmentCode": "MATH"
+    },
+    {
+      "code": "MATH112X",
+      "title": "Calculus I",
+      "description": "This course includes the study of limits, continuity, derivatives, integrals, and transcendental functions. Properties and applications of the above.",
+      "credits": 4,
+      "level": "INTRODUCTORY",
+      "departmentCode": "MATH",
+      "prerequisites": null,
+      "corequisites": [],
+      "prerequisiteText": "Complete 1 of the followingOption 1: ; Take the following course(s): ; MATH109 - Precalculus (5)Option 2: ; Take the following course(s): ; MATH110X - College Algebra (3) ; MATH111 - Trigonometry (2)Option 3: ; ACT 27Option 4: ; SAT 620Option 5: ; 2016 SAT 640Option 6: ; ALEKS 85"
+    },
+    {
+      "code": "MATH119",
+      "title": "Applied Calculus for Data Analysis",
+      "description": "The three topic pillars of this course are functions, derivatives, and integrals. We will work on broadening and deepening our understanding of functions as tools of mathematics and as models. We will focus on a derivative as defined by its role in the local approximation of a curve and use derivatives in optimization. We will focus on integrals as a way to compute probabilities and will explore the connection between the probability density function (pdf) and cumulative distribution function (cdf) for a continuous random variable. We will fit models to data visually, by maximizing log likelihood functions, and by using a method of moments. We will rely on software (R and Mathematica) to help us with our calculations in this course.",
+      "credits": 4,
+      "level": "INTRODUCTORY",
+      "departmentCode": "MATH",
+      "prerequisites": [
+        [
+          "MATH101",
+          "MATH109",
+          "MATH110X"
+        ],
+        [
+          "CHEM105",
+          "DS250",
+          "DS350"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Complete all of the following ; Complete 1 of the following ; Take 1 of the following courses: ; MATH109 - Precalculus (5) ; MATH110X - College Algebra (3) ; MATH101 - Intermediate Algebra (4) ; ACT 23 or SAT 540 or 2016 SAT 570 or ALEKS 55 ; Take 1 of the following courses: ; CHEM105 - General Chemistry I (3) ; DS250 - Data Science Programming (2) ; DS350 - Data Wrangling and Visualization (3) ; -or- CS124 (last offered 2023)"
+    },
+    {
+      "code": "MATH330",
+      "title": "Engineering Statistics",
+      "description": "This course introduces statistical methods for science and engineering. A review of basic statistical concepts of central tendency, dispersion of data, probability laws, hypothesis testing, and confidence intervals will be conducted. It introduces statistical process control, design of experiments, statistical tolerance analysis, and concepts of Six Sigma quality.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "MATH"
+    },
+    {
+      "code": "MATH341",
+      "title": "Linear Algebra",
+      "description": "This course covers systems of linear equations, matrices, determinants, eigenvalues and eigenvectors, vectors, vector spaces, linear transformations, and applications.",
+      "credits": 3,
+      "level": "ADVANCED",
+      "departmentCode": "MATH"
+    },
+    {
+      "code": "PH135",
+      "title": "Introduction to Scientific Computing in Physics",
+      "description": "Students will learn basic computer programming skills in Python with a concerted emphasis on STEM-related problems and applications.  Basic programming skills covered include: variables, strings, booleans, conditionals, lists, tuples, dictionaries, sets, loops, and functions. STEM-specific skills covered include: Python’s numpy module, file I/O, simple and advanced plotting, dataframes (python pandas), symbolic math (sympy), optimization algorithms, curve fitting, and Euler’s method. Students will gain extensive experience working in jupyter notebooks and homework problem sets will involve introductory-level physics and mathematics.  The course will also serve as an introduction to the physics major and the many career options that the degree offers.  Students will gain confidence in their degree and start making educational plans to match their career goals.",
+      "credits": 2,
+      "level": "INTRODUCTORY",
+      "departmentCode": "PHYS"
+    },
+    {
+      "code": "WDD130",
+      "title": "Web Fundamentals",
+      "description": "Introduces the World Wide Web and careers in website design and development. The course is hands-on, with students actually participating in simple web designs and programming. It is anticipated that students who complete this course will understand the fields of web design and development and will have a good idea of whether they want to pursue this degree as a major.",
+      "credits": 2,
+      "level": "INTRODUCTORY",
+      "departmentCode": "CSE",
+      "prerequisites": [],
+      "corequisites": []
+    },
+    {
+      "code": "WDD131",
+      "title": "Dynamic Web Fundamentals",
+      "description": "This course builds on prior experience in Web Fundamentals and programming. Students will learn to create dynamic websites that use JavaScript to respond to events, update content, and create responsive user experiences.",
+      "credits": 2,
+      "level": "INTRODUCTORY",
+      "departmentCode": "CSE",
+      "prerequisites": [
+        [
+          "WDD130"
+        ],
+        [
+          "CSE110"
+        ]
+      ],
+      "corequisites": [],
+      "prerequisiteText": "Take the following course(s): ; WDD130 - Web Fundamentals (2) ; CSE110 - Introduction to Programming (2)"
+    },
+    {
+      "code": "WDD230",
+      "title": "Web Frontend Development I",
+      "description": "Focuses on the planning, design, and development of responsive websites using HTML, CSS, and JavaScript with attention to usability, accessibility, and best practices in responsive frontend development.",
+      "credits": 3,
+      "level": "INTERMEDIATE",
+      "departmentCode": "CSE"
+    },
+    {
+      "code": "WDD231",
+      "title": "Web Frontend Development I",
+      "description": "Builds on prior experience with Dynamic Web Fundamentals and programming with a focus on user experience, accessibility, compliance, performance optimization, and basic API usage.",
+      "credits": 2,
+      "level": "INTERMEDIATE",
+      "departmentCode": "CSE"
+    }
+  ],
+  "programs": [
+    {
+      "code": "440",
+      "name": "Computer Science",
+      "degreeType": "BACHELOR",
+      "catalogYear": 2026,
+      "description": "Computer scientists tackle some of the most interesting and challenging problems of our time, including developing massive-scale applications in the cloud, highly-reliable systems, and artificial intelligence. To be a successful computer scientist, you need an excellent understanding of both programming and algorithms, so you know not only the how but also the why of computing.\n\nThe Computer Science degree gives students a broad, deep, balanced understanding of computing including cutting edge technologies and skills in preparation to work in any area of the computing industry. \n\nAs a computer science student at BYU-Idaho, you first engage in a wide variety of experiences that help you develop core skills in programming, algorithms, and computing. Then you will explore advanced topics in machine learning and massively parallel computation. After successfully completing this program, you will be ready for a career in a variety of computing areas, including software development, data science, system analysis, or research.",
+      "requirementGroups": [
+        {
+          "name": "General Education",
+          "requirementType": "GENERAL_EDUCATION",
+          "operator": "ALL",
+          "courses": [],
+          "children": [],
+          "minCredits": 39,
+          "description": "Take at least 39 credit(s) to complete the following program(s): GE - BACH"
+        },
+        {
+          "name": "First Year Core",
+          "requirementType": "REQUIRED",
+          "operator": "ALL",
+          "courses": [
+            {
+              "code": "CSE110",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE111",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE170",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE199R",
+              "minGrade": "C-"
+            },
+            {
+              "code": "ECEN106",
+              "minGrade": "C-"
+            },
+            {
+              "code": "WDD130",
+              "minGrade": "C-"
+            },
+            {
+              "code": "WDD131",
+              "minGrade": "C-"
+            }
+          ],
+          "children": [],
+          "minCredits": 14
+        },
+        {
+          "name": "Core",
+          "requirementType": "REQUIRED",
+          "operator": "ALL",
+          "courses": [
+            {
+              "code": "CSE210",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE212",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE280",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE300",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE310",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE351",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE370",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE381",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE382",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE399R",
+              "minGrade": "C-"
+            },
+            {
+              "code": "DS250",
+              "minGrade": "C-"
+            },
+            {
+              "code": "ITM220",
+              "minGrade": "C-"
+            },
+            {
+              "code": "ITM350",
+              "minGrade": "C-"
+            }
+          ],
+          "children": [],
+          "minCredits": 31
+        },
+        {
+          "name": "Math",
+          "requirementType": "REQUIRED",
+          "operator": "ANY",
+          "courses": [
+            {
+              "code": "MATH112X",
+              "minGrade": "C-"
+            },
+            {
+              "code": "MATH119",
+              "minGrade": "C-"
+            }
+          ],
+          "children": [],
+          "minCourses": 1,
+          "minCredits": 4
+        },
+        {
+          "name": "Advanced Topics",
+          "requirementType": "ELECTIVE",
+          "operator": "ANY",
+          "courses": [
+            {
+              "code": "CSE450",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE481",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE455",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE490R",
+              "minGrade": "C-"
+            },
+            {
+              "code": "CSE498R",
+              "minGrade": "C-"
+            },
+            {
+              "code": "DS460",
+              "minGrade": "C-"
+            }
+          ],
+          "children": [],
+          "minCredits": 6
+        },
+        {
+          "name": "Experiential Learning",
+          "description": "Complete 1 of the following",
+          "requirementType": "REQUIRED",
+          "operator": "ANY",
+          "courses": [],
+          "children": [
+            {
+              "name": "Option A",
+              "requirementType": "REQUIRED",
+              "operator": "ANY",
+              "courses": [
+                {
+                  "code": "CSE398",
+                  "minGrade": "C-",
+                  "creditsOverride": 3
+                }
+              ],
+              "children": [],
+              "minCredits": 3,
+              "description": "NOTE: Students must register for 3 credits from CSE 398."
+            },
+            {
+              "name": "Option B",
+              "requirementType": "REQUIRED",
+              "operator": "ALL",
+              "courses": [
+                {
+                  "code": "CSE397",
+                  "minGrade": "C-"
+                }
+              ],
+              "children": []
+            }
+          ],
+          "minCredits": 3
+        },
+        {
+          "name": "Unspecified Electives",
+          "requirementType": "ELECTIVE",
+          "operator": "ANY",
+          "courses": [],
+          "children": [],
+          "minCredits": 23,
+          "description": "Take at least 23 credit(s) from any eligible university credits. In addition to courses meeting the requirements for this program, students can take other courses offered by the university, for which they meet the course eligibility requirements, to bring their total number of credits to the minimum of 120 credits required for graduation. Additional credits may also come from credits received through General Education courses."
+        }
+      ]
+    }
+  ]
+}

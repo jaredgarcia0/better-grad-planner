@@ -1,0 +1,202 @@
+// This is your Prisma schema file,
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DegreeType {
+  ASSOCIATE
+  BACHELOR
+  MASTER
+  DOCTORATE
+  CERTIFICATE
+  OTHER
+}
+
+enum RequirementType {
+  REQUIRED
+  ELECTIVE
+  CONCENTRATION
+  GENERAL_EDUCATION
+  CAPSTONE
+  OTHER
+}
+
+enum RequirementOperator {
+  ALL
+  ANY
+}
+
+enum PrerequisiteType {
+  PREREQUISITE
+  COREQUISITE
+}
+
+enum CourseLevel {
+  INTRODUCTORY
+  INTERMEDIATE
+  ADVANCED
+  GRADUATE
+}
+
+model University {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        String
+  shortName   String?
+  websiteUrl  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  programs    DegreeProgram[]
+  departments Department[]
+  courses     Course[]
+  terms       AcademicTerm[]
+
+  @@index([name])
+}
+
+model Department {
+  id           String     @id @default(uuid()) @db.Uuid
+  universityId String     @db.Uuid
+  code         String
+  name         String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  courses      Course[]
+
+  @@unique([universityId, code])
+  @@index([universityId, name])
+}
+
+// A separate row is used for each catalog/version of a program so that
+// historical degree requirements remain available.
+model DegreeProgram {
+  id                String             @id @default(uuid()) @db.Uuid
+  universityId      String             @db.Uuid
+  code              String
+  name              String
+  degreeType        DegreeType
+  catalogYear       Int?
+  description       String?
+  totalCredits      Int?               @db.SmallInt()
+  university        University         @relation(fields: [universityId], references: [id], onDelete: Restrict)
+  requirementGroups RequirementGroup[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@unique([universityId, code, catalogYear])
+  @@index([universityId, name])
+}
+
+// Requirement groups can be nested. The operator describes how children are
+// evaluated: ALL means every child is required, ANY means one child is enough.
+model RequirementGroup {
+  id              String              @id @default(uuid()) @db.Uuid
+  programId       String              @db.Uuid
+  parentId        String?             @db.Uuid
+  name            String
+  description     String?
+  requirementType RequirementType
+  operator        RequirementOperator @default(ALL)
+  sequence        Int                 @default(0)
+  minCourses      Int?
+  maxCourses      Int?
+  minCredits      Int?                @db.SmallInt()
+  maxCredits      Int?                @db.SmallInt()
+  program         DegreeProgram       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  parent          RequirementGroup?   @relation("RequirementGroupTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children        RequirementGroup[]  @relation("RequirementGroupTree")
+  courses         RequirementCourse[]
+
+  @@index([programId, sequence])
+  @@index([parentId, sequence])
+}
+
+// A course may appear in multiple requirement groups and may satisfy a group
+// with a minimum grade or a different credit value.
+model RequirementCourse {
+  id              String           @id @default(uuid()) @db.Uuid
+  requirementId   String           @db.Uuid
+  courseId        String           @db.Uuid
+  sequence        Int              @default(0)
+  minGrade        String?
+  creditsOverride Int?             @db.SmallInt()
+  requirement     RequirementGroup @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([requirementId, courseId])
+  @@index([courseId])
+}
+
+model Course {
+  id                 String               @id @default(uuid()) @db.Uuid
+  universityId       String               @db.Uuid
+  departmentId       String?              @db.Uuid
+  code               String
+  title              String
+  description        String?
+  credits            Int                  @db.SmallInt()
+  level              CourseLevel?
+  active             Boolean              @default(true)
+  university         University           @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  department         Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  requirementCourses RequirementCourse[]
+  prerequisiteFor    CoursePrerequisite[] @relation("PrerequisiteFor")
+  prerequisites      CoursePrerequisite[] @relation("CoursePrerequisites")
+  offerings          CourseOffering[]
+
+  @@unique([universityId, code])
+  @@index([universityId, title])
+  @@index([departmentId, code])
+}
+
+// Rows sharing the same groupNumber are alternatives when isAlternative is
+// true. This supports common rules such as “course A and (course B or C)”.
+model CoursePrerequisite {
+  id                   String           @id @default(uuid()) @db.Uuid
+  courseId             String           @db.Uuid
+  prerequisiteCourseId String           @db.Uuid
+  type                 PrerequisiteType @default(PREREQUISITE)
+  groupNumber          Int              @default(0)
+  isAlternative        Boolean          @default(false)
+  minimumGrade         String?
+  course               Course           @relation("CoursePrerequisites", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisiteCourse   Course           @relation("PrerequisiteFor", fields: [prerequisiteCourseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, prerequisiteCourseId, type])
+  @@index([courseId, groupNumber])
+  @@index([prerequisiteCourseId])
+}
+
+model AcademicTerm {
+  id           String           @id @default(uuid()) @db.Uuid
+  universityId String           @db.Uuid
+  name         String
+  code         String
+  startsOn     DateTime
+  endsOn       DateTime
+  university   University       @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  offerings    CourseOffering[]
+
+  @@unique([universityId, code])
+  @@index([universityId, startsOn])
+}
+
+model CourseOffering {
+  id          String       @id @default(uuid()) @db.Uuid
+  courseId    String       @db.Uuid
+  termId      String       @db.Uuid
+  sectionCode String?
+  instructor  String?
+  meetingInfo String?
+  capacity    Int?
+  seatsOpen   Int?
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  term        AcademicTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, termId, sectionCode])
+  @@index([termId, courseId])
+}
