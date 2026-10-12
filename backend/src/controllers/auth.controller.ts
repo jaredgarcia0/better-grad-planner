@@ -42,7 +42,11 @@ function requestKey(req: Request, prefix: string, email: string): string {
   return `${prefix}:${req.ip}:${email}`;
 }
 
-function publicUser(user: { id: string; email: string; emailVerifiedAt: Date | null }) {
+function publicUser(user: {
+  id: string;
+  email: string;
+  emailVerifiedAt: Date | null;
+}) {
   return {
     id: user.id,
     email: user.email,
@@ -54,7 +58,10 @@ function expiresAt(): Date {
   return new Date(Date.now() + CODE_DURATION_MS);
 }
 
-async function issueEmailVerificationCode(userId: string, email: string): Promise<void> {
+async function issueEmailVerificationCode(
+  userId: string,
+  email: string,
+): Promise<void> {
   const code = createVerificationCode();
   await prisma.emailVerificationCode.deleteMany({
     where: { userId, usedAt: null },
@@ -69,7 +76,10 @@ async function issueEmailVerificationCode(userId: string, email: string): Promis
   await sendAuthCode(email, code, "email verification");
 }
 
-async function issuePasswordResetCode(userId: string, email: string): Promise<void> {
+async function issuePasswordResetCode(
+  userId: string,
+  email: string,
+): Promise<void> {
   const code = createVerificationCode();
   await prisma.passwordResetCode.deleteMany({
     where: { userId, usedAt: null },
@@ -100,7 +110,10 @@ export const register = asyncHandler(async (req, res) => {
   const email = normalizeEmail(req.body.email as string);
   const password = req.body.password as string;
   if (!isByuiEmail(email)) {
-    throw new HttpError(400, "Registration requires a @byui.edu email address.");
+    throw new HttpError(
+      400,
+      "Registration requires a @byui.edu email address.",
+    );
   }
 
   enforceRateLimit(requestKey(req, "register", email), 5);
@@ -116,7 +129,8 @@ export const register = asyncHandler(async (req, res) => {
         })
     : await prisma.user.create({ data: { email, passwordHash } });
 
-  if (!user) throw new HttpError(409, "An account with that email already exists.");
+  if (!user)
+    throw new HttpError(409, "An account with that email already exists.");
   await issueEmailVerificationCode(user.id, email);
   res.status(existing ? 200 : 201).json({
     message: "Check your BYU-Idaho email for a verification code.",
@@ -175,7 +189,7 @@ export const login = asyncHandler(async (req, res) => {
   enforceRateLimit(requestKey(req, "login", email), 10);
 
   const user = await prisma.user.findUnique({ where: { email } });
-  const passwordHash = user?.passwordHash ?? await dummyPasswordHash;
+  const passwordHash = user?.passwordHash ?? (await dummyPasswordHash);
   const passwordValid = await verifyPassword(passwordHash, password);
 
   if (!user || !passwordValid) {
@@ -200,7 +214,8 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   }
 
   res.status(202).json({
-    message: "If an account exists for that email, a password reset code will be sent.",
+    message:
+      "If an account exists for that email, a password reset code will be sent.",
   });
 });
 
