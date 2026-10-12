@@ -1,4 +1,9 @@
 export const testIds = {
+  user: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  secondUser: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab",
+  session: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  verificationCode: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  resetCode: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
   university: "11111111-1111-4111-8111-111111111111",
   secondUniversity: "11111111-1111-4111-8111-111111111112",
   department: "22222222-2222-4222-8222-222222222222",

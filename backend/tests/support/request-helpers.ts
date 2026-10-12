@@ -21,6 +21,24 @@ export function expectValidationFailure(response: ResponseLike, field: string) {
   expect(response.body.details).toBeDefined();
 }
 
+export function expectNotFound(response: ResponseLike) {
+  expect(response.status).toBe(404);
+  expect(response.body).toEqual({ error: "The requested record was not found." });
+}
+
+export function expectPrismaError(
+  response: ResponseLike,
+  status: number,
+  message: string,
+) {
+  expect(response.status).toBe(status);
+  expect(response.body).toEqual({ error: message });
+}
+
+export function expectNotCalled(mock: { mock: unknown }) {
+  expect(mock).not.toHaveBeenCalled();
+}
+
 export function expectNoContent(response: ResponseLike) {
   expect(response.status).toBe(204);
   expect(response.body).toEqual({});

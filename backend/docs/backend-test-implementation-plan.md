@@ -17,7 +17,7 @@ The shared helpers are intentionally small. Add remaining model fixtures and ass
 
 ## Current state
 
-The existing tests cover health, unknown routes, course validation, course listing, course creation, missing courses, empty updates, and Prisma `P2002` handling. The app exposes nine resource areas plus nested relationship endpoints. Prisma is mocked, so the current suite does not verify real database constraints, migrations, or seed behavior.
+The existing tests cover health, unknown routes, course validation, course listing, course creation, missing courses, empty updates, and Prisma `P2002` handling. The app now exposes authentication routes in addition to the nine catalog resource areas and nested relationship endpoints. Prisma is mocked, so the current suite does not verify real database constraints, migrations, or seed behavior.
 
 ## Recommended test-file structure
 
@@ -32,7 +32,10 @@ backend/
 │   │   ├── middleware.test.ts
 │   │   ├── parse.test.ts
 │   │   ├── common-controller.test.ts
+│   │   ├── auth-middleware.test.ts
+│   │   ├── auth-utils.test.ts
 │   │   └── routes/
+│   │       ├── auth.test.ts
 │   │       ├── universities.test.ts
 │   │       ├── departments.test.ts
 │   │       ├── programs.test.ts
@@ -65,7 +68,7 @@ Unit and route tests should use mocked Prisma and run quickly. Integration tests
 - [x] Configure a thread-based test pool with one worker.
 - [x] Add `npm run test:coverage`.
 - [x] Run `npm test` successfully with the existing suite.
-- [ ] Confirm failure behavior for an intentionally failing test and an unhandled setup error.
+- [x] Confirm failure behavior for an intentionally failing test and an unhandled setup error.
 - [ ] Add coverage thresholds after meaningful route coverage exists.
 
 Suggested future scripts:
@@ -87,11 +90,21 @@ Suggested future scripts:
 - [x] Reusable mocked Prisma models in `tests/support/prisma-mocks.ts`.
 - [x] Starter course, university, and pagination fixtures in `tests/support/fixtures.ts`.
 - [x] List, validation-failure, and no-content assertions in `tests/support/request-helpers.ts`.
-- [ ] Add fixtures for every remaining Prisma model.
-- [ ] Add not-found and Prisma error assertions.
-- [ ] Add explicit helpers for asserting that a model method was not called.
+- [x] Add fixtures for every current Prisma model, including users, sessions, verification codes, and reset codes.
+- [x] Add not-found and Prisma error assertions.
+- [x] Add an explicit helper for asserting that a model method was not called.
 
 Keep the app-level Prisma mock for route/controller tests. Do not mock Prisma in the database integration suite.
+
+### Remaining pre-phase work: coverage thresholds
+
+Defer thresholds until the shared, auth, and catalog route suites provide meaningful coverage. Then:
+
+1. Install the Vitest V8 coverage provider if it is not already available: `npm install -D @vitest/coverage-v8`.
+2. Run `npm run test:coverage` and review the generated report.
+3. Add a `coverage` block to `vitest.config.ts` with explicit `provider: "v8"`, reporters, and initial thresholds.
+4. Start with realistic thresholds based on the measured baseline, then raise them as coverage improves.
+5. Run coverage in CI so threshold regressions fail the build.
 
 ## Phase 1: shared behavior and middleware tests
 
@@ -126,6 +139,95 @@ Add tests for:
 ## Phase 2: resource endpoint tests
 
 Create one route test file per resource under `tests/unit/routes/`. Each file should cover list, create, get, patch, delete, validation, Prisma arguments, ordering, and resource-specific errors.
+
+### Authentication
+
+Authentication should use `tests/unit/routes/auth.test.ts`, with supporting unit tests for `requireAuth` and the auth utility functions. Mock Prisma, email delivery, password hashing, and token generation where appropriate so route tests remain deterministic and never send real email or persist real credentials.
+
+#### Schema and route validation
+
+Test every auth request schema for:
+
+- Valid and invalid email addresses.
+- Trimming and lowercasing email addresses.
+- Password minimum and maximum lengths.
+- Eight-digit verification and reset codes.
+- Missing fields, blank values, malformed codes, and unexpected values.
+- Validation failures not reaching Prisma, email delivery, or password hashing.
+
+#### Registration: `POST /api/auth/register`
+
+Test:
+
+- Successful registration for a valid `@byui.edu` address, including password hashing, user creation, verification-code replacement/creation, email delivery, and `201` response.
+- Rejection of non-`@byui.edu` addresses.
+- Normalization of email before the lookup and write.
+- Existing unverified user being updated and receiving a replacement code with `200`.
+- Existing verified user receiving `409`.
+- Verification-code expiry data being created with the configured duration.
+- Rate-limit rejection after the configured number of attempts.
+- Email-service failure reaching the error handler.
+
+#### Email verification: `POST /api/auth/verify-email`
+
+Test:
+
+- Invalid or non-BYU email behavior.
+- Missing user, missing code, expired code, used code, and maximum-attempt rejection.
+- Attempt count incrementing before code comparison.
+- Correct code updating `emailVerifiedAt`, marking the code used, creating a session, setting the HTTP-only session cookie, and returning only public user fields.
+- Incorrect code not verifying the user or creating a session.
+
+#### Login: `POST /api/auth/login`
+
+Test:
+
+- Successful login with normalized email and valid password.
+- Invalid email and invalid password returning the same `401` response.
+- Unverified users receiving `403` and no session.
+- Verified users receiving a session record and correctly configured cookie.
+- Dummy-password verification being used for unknown users so response behavior does not reveal account existence.
+- Login rate limiting.
+
+#### Forgot password: `POST /api/auth/forgot-password`
+
+Test:
+
+- Always returning `202` with the non-disclosing message.
+- Non-BYU and unknown email addresses not creating reset codes or sending email.
+- Verified BYU users receiving a reset-code replacement and email.
+- Unverified users not receiving a reset code.
+- Forgot-password rate limiting.
+
+#### Password reset: `POST /api/auth/reset-password`
+
+Test:
+
+- Missing user, missing/expired/used code, maximum attempts, and incorrect code.
+- Attempt count increment before code comparison.
+- Correct code hashing the new password and atomically marking the code used and deleting all existing sessions.
+- Successful response message and no password hash/code/session data leaking in the response.
+- Reset rate limiting and transaction failure handling.
+
+#### Current user and logout
+
+For `GET /api/auth/me`, test:
+
+- Missing cookie returning `401` before Prisma access.
+- Unknown, revoked, and expired sessions returning `401`.
+- Valid session attaching `req.userId` and returning public user fields only.
+- Missing user for an otherwise valid session returning `401`.
+
+For `POST /api/auth/logout`, test:
+
+- Cookie session token being hashed and deleted from Prisma.
+- Missing cookie still clearing the cookie and returning `204`.
+- Session deletion failure reaching the error handler.
+- Cookie attributes including `HttpOnly`, `SameSite=Lax`, `Path=/`, and the correct `Max-Age`; `Secure` should be asserted when `NODE_ENV=production`.
+
+#### Auth middleware and utility tests
+
+In `tests/unit/auth-middleware.test.ts`, test cookie extraction, session lookup, expiry/revocation checks, `req.userId` assignment, and `next()` behavior. In `tests/unit/auth-utils.test.ts`, test email normalization, BYU email detection, token hashing, code format, timing-safe code matching, session-token generation, cookie construction, and cookie clearing.
 
 ### Universities
 
@@ -181,7 +283,7 @@ Expand the current tests with university, department, and level filters; default
 
 ## Phase 3: route matrix and contract tests
 
-Track every registered endpoint across the nine resources. Each resource needs list/create/get/patch/delete coverage, and each nested route needs parent filtering and pagination coverage.
+Track every registered endpoint across the authentication routes and nine catalog resources. Authentication needs endpoint-specific success, validation, authorization, cookie, rate-limit, and error coverage; each catalog resource needs list/create/get/patch/delete coverage, and each nested route needs parent filtering and pagination coverage.
 
 Contract assertions should verify:
 
@@ -194,11 +296,11 @@ Contract assertions should verify:
 
 Use a disposable PostgreSQL database or isolated schema with a separate Vitest configuration. The setup should set a test-only `DATABASE_URL`, apply migrations, clear tables or use transactions, insert explicit fixtures, and disconnect Prisma after the suite. Never use the development database.
 
-Verify required/optional columns, UUID relationships, unique and foreign-key errors, cascade and set-null behavior, nested persisted records, date and enum round-tripping, pagination counts, and seed compatibility.
+Verify required/optional columns, UUID relationships, unique and foreign-key errors, cascade and set-null behavior, nested persisted records, date and enum round-tripping, pagination counts, seed compatibility, and the full auth flow using real users, sessions, verification codes, and reset codes. Confirm password hashes are never returned and session records are invalidated after logout and password reset.
 
 ## Phase 5: test data and fixtures
 
-Expand the support fixtures to include one university, one department, two courses, one program, parent/child requirements, requirement-course links, prerequisites, terms, and offerings. Use deterministic IDs and partial overrides; avoid randomness except when testing uniqueness or ID generation.
+Expand the support fixtures to include one user, verified and unverified user variants, sessions, verification codes, reset codes, one university, one department, two courses, one program, parent/child requirements, requirement-course links, prerequisites, terms, and offerings. Use deterministic IDs and partial overrides; avoid randomness except when testing uniqueness or ID generation.
 
 ## Coverage and quality targets
 
@@ -219,19 +321,20 @@ Once stable, enforce statement, branch, function, and line coverage thresholds. 
 1. [x] Add Vitest configuration and resolve the worker/setup issue.
 2. [x] Strengthen mock reset behavior and add initial shared test helpers.
 3. [x] Move `app.test.ts` and shared helpers into the separated `tests/` tree and update TypeScript/Vitest paths.
-4. [ ] Add shared middleware, parsing, response, and error tests.
-5. [ ] Complete course CRUD and relationship coverage.
-6. [ ] Add the remaining eight resource route files.
-7. [ ] Complete the route matrix and coverage reporting.
-8. [ ] Add disposable PostgreSQL integration tests.
-9. [ ] Add seed/migration verification.
-10. [ ] Enforce test and coverage commands in CI.
+4. [ ] Add shared middleware, parsing, response, error, and auth utility tests.
+5. [ ] Add `tests/unit/routes/auth.test.ts` and auth middleware coverage.
+6. [ ] Complete course CRUD and relationship coverage.
+7. [ ] Add the remaining eight catalog resource route files.
+8. [ ] Complete the route matrix and coverage reporting.
+9. [ ] Add disposable PostgreSQL integration tests for catalog and authentication flows.
+10. [ ] Add seed/migration verification and enforce test/coverage commands in CI.
 
 ## Definition of done
 
 - `npm run typecheck` passes.
 - `npm test` runs reliably without worker or setup errors.
 - Every registered API route has at least one test.
+- Every authentication endpoint has success, validation, security, cookie, rate-limit, and error coverage.
 - Every resource has happy-path CRUD coverage.
 - All filters and defaults have tests.
 - Nested endpoints have parent-filter and pagination tests.
