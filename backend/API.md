@@ -32,6 +32,22 @@ List responses have this shape:
 GET /health
 ```
 
+## Authentication
+
+Authentication uses verified `@byui.edu` email addresses, Argon2id password hashes, and an HTTP-only session cookie.
+
+```text
+POST /api/auth/register
+POST /api/auth/verify-email
+POST /api/auth/login
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
+GET  /api/auth/me
+POST /api/auth/logout
+```
+
+Registration and password reset codes expire after 10 minutes. In development, when SMTP is not configured, codes are printed to the backend log. Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `EMAIL_FROM` before using the flow in production. Set `CLIENT_ORIGIN` to the exact frontend origin when the frontend calls the API directly.
+
 ## Resources
 
 Every resource has `GET /`, `POST /`, `GET /:id`, `PATCH /:id`, and `DELETE /:id` unless noted otherwise.
@@ -81,4 +97,4 @@ Create requests use JSON. For example:
 }
 ```
 
-Authentication, authorization, users, and student graduation plans are intentionally not included yet because those models do not exist in the current Prisma schema.
+Graduation plans are not persisted yet; the current frontend still keeps planned courses in local React state.
