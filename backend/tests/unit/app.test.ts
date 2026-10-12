@@ -1,36 +1,14 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { prismaMocks, resetPrismaMocks } from "../support/prisma-mocks.js";
 
-const prismaMocks = vi.hoisted(() => {
-  const model = () => ({
-    findMany: vi.fn(),
-    count: vi.fn(),
-    findUnique: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  });
+vi.mock("../../src/lib/prisma.js", () => ({ prisma: prismaMocks }));
 
-  return {
-    course: model(),
-    coursePrerequisite: model(),
-    courseOffering: model(),
-    university: model(),
-    department: model(),
-    degreeProgram: model(),
-    requirementGroup: model(),
-    requirementCourse: model(),
-    academicTerm: model(),
-  };
-});
-
-vi.mock("./lib/prisma.js", () => ({ prisma: prismaMocks }));
-
-import { app } from "./app.js";
+import { app } from "../../src/app.js";
 
 describe("API", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetPrismaMocks();
   });
 
   it("returns a healthy status", async () => {

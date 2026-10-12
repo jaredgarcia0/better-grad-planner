@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "seed": "tsx prisma/seed.ts",
     "scrape:catalog": "tsx scripts/scrape-byui-catalog.ts",
     "prisma:generate": "prisma generate --config prisma7.config.ts",
