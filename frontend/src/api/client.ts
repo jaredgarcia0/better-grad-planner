@@ -20,12 +20,14 @@ export type Program = { id: string; name: string; degreeType?: string | null };
 export type RequirementGroup = { id: string; name: string; requirementType: string; minCredits?: number | null; maxCredits?: number | null };
 export type RequirementCourseLink = { id: string; courseId: string; creditsOverride?: number | null };
 export type ApiList<T> = { data: T[]; pagination: Pagination };
+export type User = { id: string; email: string; emailVerifiedAt: string | null };
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? "";
 
 export async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     headers: { "Content-Type": "application/json", ...options?.headers },
+    credentials: "include",
     ...options,
   });
 
@@ -41,7 +43,51 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
     throw new Error(`API request failed (${response.status}): ${message || response.statusText}`);
   }
 
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
+}
+
+export function register(email: string, password: string) {
+  return apiRequest<{ message: string }>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function verifyEmail(email: string, code: string) {
+  return apiRequest<{ data: User }>("/api/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ email, code }),
+  });
+}
+
+export function login(email: string, password: string) {
+  return apiRequest<{ data: User }>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function requestPasswordReset(email: string) {
+  return apiRequest<{ message: string }>("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function resetPassword(email: string, code: string, password: string) {
+  return apiRequest<{ message: string }>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ email, code, password }),
+  });
+}
+
+export function getCurrentUser() {
+  return apiRequest<{ data: User }>("/api/auth/me");
+}
+
+export function logout() {
+  return apiRequest<void>("/api/auth/logout", { method: "POST" });
 }
 
 export function listCourses(query = "") {

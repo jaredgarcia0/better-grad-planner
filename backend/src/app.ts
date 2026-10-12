@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { authRouter } from "./routes/auth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 import { coursesRouter } from "./routes/courses.routes.js";
@@ -17,15 +18,16 @@ export const app = express();
 const configuredOrigins = process.env.CLIENT_ORIGIN?.split(",").map((origin) => origin.trim());
 const corsOrigin = configuredOrigins?.length === 1 && configuredOrigins[0] === "*"
   ? "*"
-  : configuredOrigins ?? "*";
+  : configuredOrigins ?? "http://localhost:5173";
 
-app.use(cors({ origin: corsOrigin }));
+app.use(cors({ origin: corsOrigin, credentials: corsOrigin !== "*" }));
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+app.use("/api/auth", authRouter);
 app.use("/api/universities", universitiesRouter);
 app.use("/api/departments", departmentsRouter);
 app.use("/api/programs", programsRouter);
