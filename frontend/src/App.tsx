@@ -1,11 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { AuthPanel } from "./components/AuthPanel";
 import { CourseSearch } from "./components/CourseSearch";
-import { Course } from "./api/client";
+import { Course, getCurrentUser, logout, User } from "./api/client";
 import { PlanBoard, PlannedCourse } from "./components/PlanBoard";
 import { RequirementsPanel } from "./components/RequirementsPanel";
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [plannedCourses, setPlannedCourses] = useState<PlannedCourse[]>([]);
+
+  useEffect(() => {
+    getCurrentUser()
+      .then((result) => setUser(result.data))
+      .catch(() => setUser(null))
+      .finally(() => setAuthLoading(false));
+  }, []);
+
+  if (authLoading) {
+    return <main className="auth-shell"><p className="muted">Loading your account…</p></main>;
+  }
+
+  if (!user) {
+    return <AuthPanel onAuthenticated={setUser} />;
+  }
+
   const plannedCourseIds = new Set(plannedCourses.map((course) => course.id));
   const completedCredits = 42;
   const degreeCredits = 120;
@@ -25,11 +44,11 @@ export default function App() {
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="/" aria-label="Better Grad Planner home"><span className="brand-mark">B</span><span>Better Grad Planner</span></a>
-        <button className="profile-button" type="button" aria-label="Open profile">JD</button>
+        <button className="profile-button" type="button" aria-label="Log out" onClick={async () => { await logout(); setUser(null); setPlannedCourses([]); }}>{user.email.slice(0, 2).toUpperCase()}</button>
       </header>
       <main>
         <section className="student-header" id="overview">
-          <div><p className="eyebrow">STUDENT DASHBOARD</p><h1>Welcome back, Jordan.</h1><p className="student-copy">Here’s your progress toward completing your degree.</p></div>
+          <div><p className="eyebrow">STUDENT DASHBOARD</p><h1>Welcome back.</h1><p className="student-copy">Signed in as {user.email}. Here’s your progress toward completing your degree.</p></div>
           <div className="degree-progress"><span>Computer Science · B.S.</span><strong>{completedCredits + plannedCredits} <small>/ {degreeCredits} credits</small></strong><div className="progress-track"><i style={{ width: `${Math.min(((completedCredits + plannedCredits) / degreeCredits) * 100, 100)}%` }} /></div><em>{Math.round(((completedCredits + plannedCredits) / degreeCredits) * 100)}% toward completion</em></div>
         </section>
         <section className="stats-grid" aria-label="Catalog summary">
