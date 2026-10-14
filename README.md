@@ -31,7 +31,7 @@ Discord
 | -------------------------------- | -------------- |
 | Conducting Meetings              | Byron          |
 | Maintaining Team Assignment List | Kyle           |
-| Ensuring GitHub is Working       | Jared          |
+| Work on backend authentication      | Jared          |
 | Maintaining Documentation        | Kyle           |
 | Create & Display Presentations   | Dawson         |
 | Submit Team Assignments          | Kyle           |
