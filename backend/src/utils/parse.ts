@@ -18,6 +18,12 @@ export const optionalIntegerSchema = z.preprocess(
   (value) => (value === null ? null : value),
   integerSchema.nullable().optional(),
 );
+// Credits can be fractional (some BYU-I courses are worth 0.5 credits).
+export const creditsSchema = z.coerce.number().min(0, "must be a non-negative number");
+export const optionalCreditsSchema = z.preprocess(
+  (value) => (value === null ? null : value),
+  creditsSchema.nullable().optional(),
+);
 export const booleanSchema = z.preprocess(
   (value) => (value === "true" ? true : value === "false" ? false : value),
   z.boolean("must be true or false"),

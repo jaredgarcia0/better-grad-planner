@@ -15,6 +15,9 @@ enum DegreeType {
   MASTER
   DOCTORATE
   CERTIFICATE
+  MINOR
+  CLUSTER
+  GENERAL_EDUCATION
   OTHER
 }
 
@@ -131,7 +134,7 @@ model DegreeProgram {
   degreeType        DegreeType
   catalogYear       Int?
   description       String?
-  totalCredits      Int?               @db.SmallInt()
+  totalCredits      Float?
   university        University         @relation(fields: [universityId], references: [id], onDelete: Restrict)
   requirementGroups RequirementGroup[]
   createdAt         DateTime           @default(now())
@@ -154,8 +157,8 @@ model RequirementGroup {
   sequence        Int                 @default(0)
   minCourses      Int?
   maxCourses      Int?
-  minCredits      Int?                @db.SmallInt()
-  maxCredits      Int?                @db.SmallInt()
+  minCredits      Float?
+  maxCredits      Float?
   program         DegreeProgram       @relation(fields: [programId], references: [id], onDelete: Cascade)
   parent          RequirementGroup?   @relation("RequirementGroupTree", fields: [parentId], references: [id], onDelete: Cascade)
   children        RequirementGroup[]  @relation("RequirementGroupTree")
@@ -173,7 +176,7 @@ model RequirementCourse {
   courseId        String           @db.Uuid
   sequence        Int              @default(0)
   minGrade        String?
-  creditsOverride Int?             @db.SmallInt()
+  creditsOverride Float?
   requirement     RequirementGroup @relation(fields: [requirementId], references: [id], onDelete: Cascade)
   course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
@@ -188,7 +191,7 @@ model Course {
   code               String
   title              String
   description        String?
-  credits            Int                  @db.SmallInt()
+  credits            Float
   level              CourseLevel?
   active             Boolean              @default(true)
   university         University           @relation(fields: [universityId], references: [id], onDelete: Cascade)
