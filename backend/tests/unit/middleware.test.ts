@@ -25,8 +25,8 @@ function testApp() {
 describe("validation middleware", () => {
   it("replaces body, params, and query with parsed values before the controller", async () => {
     const response = await request(testApp())
-      .post("/items/123e4567-e89b-42d3-a456-426614174000?active=true")
-      .send({ name: "  Item  " });
+      .post("/items/123e4567-e89b-42d3-a456-426614174000?active=true&unknown=removed")
+      .send({ name: "  Item  ", unknown: "removed" });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
@@ -69,6 +69,16 @@ describe("validation middleware", () => {
     const response = await request(app).patch("/items").send({});
     expect(response.status).toBe(400);
     expect(response.body.error).toBe("At least one field must be supplied for an update.");
+  });
+
+  it("returns a 400 response for malformed JSON", async () => {
+    const response = await request(testApp())
+      .post("/items/123e4567-e89b-42d3-a456-426614174000")
+      .set("Content-Type", "application/json")
+      .send('{"name":');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: "Malformed JSON request." });
   });
 });
 

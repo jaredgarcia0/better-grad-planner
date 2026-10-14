@@ -286,4 +286,15 @@ describe("API", () => {
     expect(deleted.status).toBe(204);
     expect(deleted.text).toBe("");
   });
+
+  it("returns 500 when authentication session lookup fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    prismaMocks.session.findUnique.mockRejectedValue(new Error("session store unavailable"));
+    const response = await request(app)
+      .get("/api/auth/me")
+      .set("Cookie", "bgp_session=secret");
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: "Internal server error." });
+    errorSpy.mockRestore();
+  });
 });

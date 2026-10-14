@@ -18,6 +18,10 @@ describe("authentication utilities", () => {
     expect(normalizeEmail("  Student@BYUI.EDU ")).toBe("student@byui.edu");
     expect(isByuiEmail("student@byui.edu")).toBe(true);
     expect(isByuiEmail("student@example.com")).toBe(false);
+    expect(isByuiEmail("@byui.edu")).toBe(false);
+    expect(isByuiEmail("student@mail.byui.edu")).toBe(false);
+    expect(isByuiEmail("student@byui.edu.")).toBe(false);
+    expect(isByuiEmail("  STUDENT@BYUI.EDU ")).toBe(true);
   });
 
   it("hashes tokens deterministically and compares codes safely", () => {
@@ -26,6 +30,9 @@ describe("authentication utilities", () => {
     expect(codesMatch("12345678", hashToken("12345678"))).toBe(true);
     expect(codesMatch("12345679", hashToken("12345678"))).toBe(false);
     expect(codesMatch("12345678", "not-a-hash")).toBe(false);
+    expect(codesMatch("", "")).toBe(false);
+    expect(codesMatch("12345678", "abc")).toBe(false);
+    expect(codesMatch("12345678", "g".repeat(64))).toBe(false);
   });
 
   it("generates URL-safe session tokens and eight-digit codes", () => {
@@ -41,6 +48,9 @@ describe("authentication utilities", () => {
     expect(getCookie({ headers: {} } as any, SESSION_COOKIE_NAME)).toBeUndefined();
     expect(getCookie({ headers: { cookie: `${SESSION_COOKIE_NAME}=first; ${SESSION_COOKIE_NAME}=second` } } as any, SESSION_COOKIE_NAME)).toBe("first");
     expect(getCookie({ headers: { cookie: `${SESSION_COOKIE_NAME}` } } as any, SESSION_COOKIE_NAME)).toBe("");
+    expect(getCookie({ headers: { cookie: `${SESSION_COOKIE_NAME}="quoted%20value"` } } as any, SESSION_COOKIE_NAME)).toBe("quoted value");
+    expect(getCookie({ headers: { cookie: `${SESSION_COOKIE_NAME}=a=b=c` } } as any, SESSION_COOKIE_NAME)).toBe("a=b=c");
+    expect(getCookie({ headers: { cookie: `${SESSION_COOKIE_NAME}=%E0%A4%A` } } as any, SESSION_COOKIE_NAME)).toBeUndefined();
   });
 
   it("sets and clears the session cookie with environment-specific attributes", () => {
@@ -51,10 +61,16 @@ describe("authentication utilities", () => {
       "Set-Cookie",
       expect.stringContaining(`${SESSION_COOKIE_NAME}=token%20value`),
     );
+    expect(res.setHeader).toHaveBeenCalledWith("Set-Cookie", expect.stringContaining("Path=/"));
+    expect(res.setHeader).toHaveBeenCalledWith("Set-Cookie", expect.stringContaining("HttpOnly"));
+    expect(res.setHeader).toHaveBeenCalledWith("Set-Cookie", expect.stringContaining("SameSite=Lax"));
     expect(res.setHeader).toHaveBeenCalledWith("Set-Cookie", expect.stringContaining(`Max-Age=${SESSION_DURATION_MS / 1000}`));
     expect(res.setHeader).not.toHaveBeenCalledWith("Set-Cookie", expect.stringContaining("Secure"));
     clearSessionCookie(res);
     expect(res.setHeader).toHaveBeenLastCalledWith("Set-Cookie", expect.stringContaining("Max-Age=0"));
+    expect(res.setHeader).toHaveBeenLastCalledWith("Set-Cookie", expect.stringContaining("Path=/"));
+    expect(res.setHeader).toHaveBeenLastCalledWith("Set-Cookie", expect.stringContaining("HttpOnly"));
+    expect(res.setHeader).toHaveBeenLastCalledWith("Set-Cookie", expect.stringContaining("SameSite=Lax"));
     vi.unstubAllEnvs();
   });
 
@@ -66,5 +82,12 @@ describe("authentication utilities", () => {
     clearSessionCookie(res);
     expect(res.setHeader).toHaveBeenLastCalledWith("Set-Cookie", expect.stringContaining("Secure"));
     vi.unstubAllEnvs();
+  });
+
+  it("generates distinct random session tokens and verification codes", () => {
+    const tokens = new Set(Array.from({ length: 20 }, () => createSessionToken()));
+    const codes = new Set(Array.from({ length: 20 }, () => createVerificationCode()));
+    expect(tokens.size).toBe(20);
+    expect(codes.size).toBeGreaterThan(1);
   });
 });

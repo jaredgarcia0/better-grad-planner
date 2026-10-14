@@ -33,6 +33,7 @@ describe("request parsing helpers", () => {
     expect(optionalString("  note  ", "note")).toBe("note");
     expect(optionalString(null, "note")).toBeNull();
     expect(optionalString(undefined, "note")).toBeUndefined();
+    expect(optionalString("   ", "note")).toBeUndefined();
     expect(() => requiredString("   ", "title")).toThrowError(
       "title is required and must be a non-empty string.",
     );
@@ -45,12 +46,16 @@ describe("request parsing helpers", () => {
     expect(optionalBoolean("false", "active")).toBe(false);
     expect(optionalBoolean(null, "active")).toBeNull();
     expect(requiredDate("2026-01-02", "startsOn")).toBeInstanceOf(Date);
+    expect(requiredDate("2026-01-02T09:30:00-06:00", "startsOn")).toBeInstanceOf(Date);
     expect(optionalDate(null, "endsOn")).toBeNull();
     expect(() => requiredInteger("3.5", "credits")).toThrow();
     expect(() => optionalBoolean("yes", "active")).toThrow();
     expect(() => parseSchema(dateSchema, "not-a-date", "startsOn")).toThrow(
       HttpError,
     );
+    expect(() => parseSchema(dateSchema, "", "startsOn")).toThrow(HttpError);
+    expect(() => parseSchema(dateSchema, "01/02/2026", "startsOn")).toThrow(HttpError);
+    expect(() => parseSchema(dateSchema, "2026-02-30", "startsOn")).toThrow(HttpError);
     expect(booleanSchema.safeParse("yes").success).toBe(false);
   });
 
@@ -65,6 +70,12 @@ describe("request parsing helpers", () => {
     expect(() => pagination({ page: "0" })).toThrow();
     expect(() => pagination({ pageSize: "101" })).toThrow();
     expect(() => pagination({ page: "one" })).toThrow();
+    expect(() => pagination({ page: "" })).toThrow();
+    expect(() => pagination({ page: "-1" })).toThrow();
+    expect(() => pagination({ page: "1.5" })).toThrow();
+    expect(() => pagination({ page: null })).toThrow();
+    expect(() => pagination({ page: "Infinity" })).toThrow();
+    expect(() => pagination({ page: ["1", "2"] })).toThrow();
   });
 
   it("normalizes query strings and validates enums", () => {

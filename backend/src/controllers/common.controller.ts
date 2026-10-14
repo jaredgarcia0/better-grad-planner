@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { HttpError } from "../utils/httpError.js";
-import { response } from "../utils/parse.js";
+import { pagination, response } from "../utils/parse.js";
 
 export type Model = {
   findMany: (args: any) => Promise<any[]>;
@@ -22,9 +22,7 @@ export function queryValue(req: Request, key: string): string | undefined {
 }
 
 function pageFrom(req: Request): Page {
-  const page = Number(req.query.page);
-  const pageSize = Number(req.query.pageSize);
-  return { page, pageSize, skip: (page - 1) * pageSize, take: pageSize };
+  return pagination(req.query as Record<string, unknown>);
 }
 
 export async function listResource(
@@ -54,6 +52,9 @@ export async function createResource(req: Request, res: Response, model: Model) 
 }
 
 export async function updateResource(req: Request, res: Response, model: Model) {
+  if (typeof req.body !== "object" || req.body === null || Array.isArray(req.body)) {
+    throw new HttpError(400, "Update body must be an object.");
+  }
   const data = req.body as Record<string, unknown>;
   if (Object.keys(data).length === 0) {
     throw new HttpError(400, "At least one field must be supplied for an update.");

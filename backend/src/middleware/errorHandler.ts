@@ -2,6 +2,16 @@ import type { ErrorRequestHandler } from "express";
 import { HttpError } from "../utils/httpError.js";
 
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
+  if (
+    error instanceof SyntaxError &&
+    typeof error === "object" &&
+    error !== null &&
+    "body" in error
+  ) {
+    res.status(400).json({ error: "Malformed JSON request." });
+    return;
+  }
+
   if (error instanceof HttpError) {
     res.status(error.statusCode).json({
       error: error.message,

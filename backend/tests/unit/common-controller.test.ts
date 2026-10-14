@@ -52,4 +52,25 @@ describe("common controller behavior", () => {
     await expect(updateResource(req({ body: {} }), response(), model)).rejects.toMatchObject({ statusCode: 400 });
     expect(model.update).not.toHaveBeenCalled();
   });
+
+  it("rejects malformed pagination and non-object update bodies", async () => {
+    const model = { findMany: vi.fn(), count: vi.fn(), update: vi.fn() } as any;
+    await expect(listResource(req({ query: { page: "bad", pageSize: "10" } }), response(), model)).rejects.toMatchObject({ statusCode: 400 });
+    await expect(listResource(req({ query: { page: "1", pageSize: "101" } }), response(), model)).rejects.toMatchObject({ statusCode: 400 });
+    await expect(updateResource(req({ body: null }), response(), model)).rejects.toMatchObject({ statusCode: 400 });
+    await expect(updateResource(req({ body: [] }), response(), model)).rejects.toMatchObject({ statusCode: 400 });
+    expect(model.findMany).not.toHaveBeenCalled();
+    expect(model.count).not.toHaveBeenCalled();
+    expect(model.update).not.toHaveBeenCalled();
+  });
+
+  it("propagates findMany and count failures from Promise.all", async () => {
+    const findManyFailure = new Error("findMany failed");
+    const findManyModel = { findMany: vi.fn().mockRejectedValue(findManyFailure), count: vi.fn().mockResolvedValue(1) } as any;
+    await expect(listResource(req(), response(), findManyModel)).rejects.toBe(findManyFailure);
+
+    const countFailure = new Error("count failed");
+    const countModel = { findMany: vi.fn().mockResolvedValue([]), count: vi.fn().mockRejectedValue(countFailure) } as any;
+    await expect(listResource(req(), response(), countModel)).rejects.toBe(countFailure);
+  });
 });
