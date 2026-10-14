@@ -12,7 +12,15 @@ function parse(name: string, schema: ZodType, value: unknown) {
   const result = schema.safeParse(value);
   if (result.success) return result.data;
 
-  throw new HttpError(400, `${name} validation failed.`, result.error.flatten());
+  const updateMessage = result.error.issues.find(
+    (issue) => issue.message === "At least one field must be supplied for an update.",
+  )?.message;
+
+  throw new HttpError(
+    400,
+    updateMessage ?? `${name} validation failed.`,
+    result.error.flatten(),
+  );
 }
 
 /** Validate and replace request values before the controller executes. */

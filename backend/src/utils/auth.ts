@@ -12,7 +12,7 @@ export function normalizeEmail(email: string): string {
 }
 
 export function isByuiEmail(email: string): boolean {
-  return normalizeEmail(email).endsWith("@byui.edu");
+  return /^[^@\s]+@byui\.edu$/.test(normalizeEmail(email));
 }
 
 export function hashToken(value: string): string {
@@ -28,6 +28,7 @@ export function createVerificationCode(): string {
 }
 
 export function codesMatch(code: string, codeHash: string): boolean {
+  if (!/^[a-f0-9]{64}$/i.test(codeHash)) return false;
   const candidate = Buffer.from(hashToken(code), "hex");
   const stored = Buffer.from(codeHash, "hex");
   return candidate.length === stored.length && timingSafeEqual(candidate, stored);
@@ -47,7 +48,17 @@ export function getCookie(req: Request, name: string): string | undefined {
 
   for (const part of header.split(";")) {
     const [key, ...valueParts] = part.trim().split("=");
-    if (key === name) return decodeURIComponent(valueParts.join("="));
+    if (key === name) {
+      const rawValue = valueParts.join("=");
+      const unquoted = rawValue.startsWith('"') && rawValue.endsWith('"')
+        ? rawValue.slice(1, -1)
+        : rawValue;
+      try {
+        return decodeURIComponent(unquoted);
+      } catch {
+        return undefined;
+      }
+    }
   }
 
   return undefined;

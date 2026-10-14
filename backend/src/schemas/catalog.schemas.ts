@@ -41,6 +41,27 @@ const courseLevelSchema = z.enum([
   "GRADUATE",
 ]);
 
+const updateSchema = <T extends z.ZodRawShape>(schema: z.ZodObject<T>) =>
+  z.preprocess(
+    (value, context) => {
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value) &&
+        Object.keys(value).length === 0
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "At least one field must be supplied for an update.",
+        });
+        return z.NEVER;
+      }
+
+      return value;
+    },
+    schema.partial(),
+  );
+
 export const idParamsSchema = z.object({ id: uuidSchema });
 const pageQuerySchema = z.object({
   page: z.preprocess(
@@ -61,7 +82,7 @@ export const createUniversitySchema = z.object({
   shortName: optionalStringSchema,
   websiteUrl: optionalStringSchema,
 });
-export const updateUniversitySchema = createUniversitySchema.partial();
+export const updateUniversitySchema = updateSchema(createUniversitySchema);
 
 export const universityChildQuerySchema = searchQuerySchema;
 export const listDepartmentsSchema = paginatedQuerySchema.extend({
@@ -73,7 +94,7 @@ export const createDepartmentSchema = z.object({
   code: requiredStringSchema,
   name: requiredStringSchema,
 });
-export const updateDepartmentSchema = createDepartmentSchema.partial();
+export const updateDepartmentSchema = updateSchema(createDepartmentSchema);
 
 export const listProgramsSchema = paginatedQuerySchema.extend({
   q: queryStringSchema,
@@ -90,7 +111,7 @@ export const createProgramSchema = z.object({
   description: optionalStringSchema,
   totalCredits: optionalCreditsSchema,
 });
-export const updateProgramSchema = createProgramSchema.partial();
+export const updateProgramSchema = updateSchema(createProgramSchema);
 
 export const listRequirementsSchema = paginatedQuerySchema.extend({
   programId: uuidSchema.optional(),
@@ -111,7 +132,7 @@ export const createRequirementSchema = z.object({
   minCredits: optionalCreditsSchema,
   maxCredits: optionalCreditsSchema,
 });
-export const updateRequirementSchema = createRequirementSchema.partial();
+export const updateRequirementSchema = updateSchema(createRequirementSchema);
 
 export const listCoursesSchema = paginatedQuerySchema.extend({
   q: queryStringSchema,
@@ -130,7 +151,7 @@ export const createCourseSchema = z.object({
   level: courseLevelSchema.nullable().optional(),
   active: optionalBooleanSchema.default(true),
 });
-export const updateCourseSchema = createCourseSchema.partial();
+export const updateCourseSchema = updateSchema(createCourseSchema);
 
 export const listRequirementCoursesSchema = paginatedQuerySchema.extend({
   requirementId: uuidSchema.optional(),
@@ -143,8 +164,9 @@ export const createRequirementCourseSchema = z.object({
   minGrade: optionalStringSchema,
   creditsOverride: optionalCreditsSchema,
 });
-export const updateRequirementCourseSchema =
-  createRequirementCourseSchema.partial();
+export const updateRequirementCourseSchema = updateSchema(
+  createRequirementCourseSchema,
+);
 
 export const listPrerequisitesSchema = paginatedQuerySchema.extend({
   courseId: uuidSchema.optional(),
@@ -159,7 +181,7 @@ export const createPrerequisiteSchema = z.object({
   isAlternative: optionalBooleanSchema.default(false),
   minimumGrade: optionalStringSchema,
 });
-export const updatePrerequisiteSchema = createPrerequisiteSchema.partial();
+export const updatePrerequisiteSchema = updateSchema(createPrerequisiteSchema);
 
 export const listTermsSchema = paginatedQuerySchema.extend({
   q: queryStringSchema,
@@ -172,7 +194,7 @@ export const createTermSchema = z.object({
   startsOn: dateSchema,
   endsOn: dateSchema,
 });
-export const updateTermSchema = createTermSchema.partial();
+export const updateTermSchema = updateSchema(createTermSchema);
 
 export const listOfferingsSchema = paginatedQuerySchema.extend({
   courseId: uuidSchema.optional(),
@@ -187,7 +209,7 @@ export const createOfferingSchema = z.object({
   capacity: optionalIntegerSchema,
   seatsOpen: optionalIntegerSchema,
 });
-export const updateOfferingSchema = createOfferingSchema.partial();
+export const updateOfferingSchema = updateSchema(createOfferingSchema);
 
 // Nested collection endpoints use the parent route parameter as a filter.
 export const universityIdParamsSchema = idParamsSchema;

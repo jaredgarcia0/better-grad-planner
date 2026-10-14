@@ -12,7 +12,10 @@ export const requiredStringSchema = z
   .string()
   .trim()
   .min(1, "is required and must be a non-empty string");
-export const optionalStringSchema = z.string().trim().nullable().optional();
+export const optionalStringSchema = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.string().trim().nullable().optional(),
+);
 export const integerSchema = z.coerce.number().int("must be an integer");
 export const optionalIntegerSchema = z.preprocess(
   (value) => (value === null ? null : value),
@@ -29,7 +32,26 @@ export const booleanSchema = z.preprocess(
   z.boolean("must be true or false"),
 );
 export const optionalBooleanSchema = booleanSchema.nullable().optional();
-export const dateSchema = z.coerce.date("must be a valid ISO date");
+const ISO_DATE_PATTERN =
+  /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2}))?$/;
+
+function isValidIsoDate(value: string): boolean {
+  const match = ISO_DATE_PATTERN.exec(value);
+  if (!match) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  const calendarDate = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return (
+    calendarDate.getUTCFullYear() === Number(match[1]) &&
+    calendarDate.getUTCMonth() === Number(match[2]) - 1 &&
+    calendarDate.getUTCDate() === Number(match[3])
+  );
+}
+
+export const dateSchema = z
+  .string()
+  .refine(isValidIsoDate, "must be a valid ISO date")
+  .transform((value) => new Date(value));
 export const optionalDateSchema = z.preprocess(
   (value) => (value === null ? null : value),
   dateSchema.nullable().optional(),
