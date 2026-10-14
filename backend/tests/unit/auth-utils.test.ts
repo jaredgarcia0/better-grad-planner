@@ -39,6 +39,8 @@ describe("authentication utilities", () => {
     const req = { headers: { cookie: `other=x; ${SESSION_COOKIE_NAME}=hello%20world` } } as any;
     expect(getCookie(req, SESSION_COOKIE_NAME)).toBe("hello world");
     expect(getCookie({ headers: {} } as any, SESSION_COOKIE_NAME)).toBeUndefined();
+    expect(getCookie({ headers: { cookie: `${SESSION_COOKIE_NAME}=first; ${SESSION_COOKIE_NAME}=second` } } as any, SESSION_COOKIE_NAME)).toBe("first");
+    expect(getCookie({ headers: { cookie: `${SESSION_COOKIE_NAME}` } } as any, SESSION_COOKIE_NAME)).toBe("");
   });
 
   it("sets and clears the session cookie with environment-specific attributes", () => {
@@ -53,6 +55,16 @@ describe("authentication utilities", () => {
     expect(res.setHeader).not.toHaveBeenCalledWith("Set-Cookie", expect.stringContaining("Secure"));
     clearSessionCookie(res);
     expect(res.setHeader).toHaveBeenLastCalledWith("Set-Cookie", expect.stringContaining("Max-Age=0"));
+    vi.unstubAllEnvs();
+  });
+
+  it("adds Secure to session cookies in production", () => {
+    const res = { setHeader: vi.fn() } as any;
+    vi.stubEnv("NODE_ENV", "production");
+    setSessionCookie(res, "token");
+    expect(res.setHeader).toHaveBeenCalledWith("Set-Cookie", expect.stringContaining("Secure"));
+    clearSessionCookie(res);
+    expect(res.setHeader).toHaveBeenLastCalledWith("Set-Cookie", expect.stringContaining("Secure"));
     vi.unstubAllEnvs();
   });
 });

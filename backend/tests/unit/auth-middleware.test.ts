@@ -46,4 +46,12 @@ describe("requireAuth", () => {
     await promise;
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
   });
+
+  it("forwards Prisma lookup failures to next", async () => {
+    const failure = new Error("database unavailable");
+    prismaMocks.session.findUnique.mockRejectedValue(failure);
+    const { next, promise } = run({ headers: { cookie: "bgp_session=secret" } });
+    await promise;
+    expect(next).toHaveBeenCalledWith(failure);
+  });
 });
