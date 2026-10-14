@@ -110,31 +110,57 @@ Defer thresholds until the shared, auth, and catalog route suites provide meanin
 
 ### Request validation
 
-Add tests for:
+Completed coverage in `tests/unit/parse.test.ts`, `tests/unit/middleware.test.ts`, and the existing `tests/unit/app.test.ts`:
 
-- Invalid UUID path parameters and UUID query filters.
-- Default, minimum, and maximum pagination values.
-- Invalid page and page-size values.
-- Boolean parsing and invalid booleans.
-- All degree, requirement, prerequisite, and course-level enums.
-- Required, optional, nullable, blank, and trimmed strings.
-- Date parsing and invalid dates.
-- Defaults for `active`, `operator`, `sequence`, prerequisite type, group number, and alternative flags.
-- Empty update bodies and valid partial updates.
-- Unknown request properties.
+- [x] Invalid UUID path parameters.
+- [x] Pagination defaults, minimum/maximum values, and invalid page/page-size values.
+- [x] Boolean parsing and invalid booleans.
+- [x] Required, optional, nullable, blank, and trimmed strings.
+- [x] Date parsing and invalid dates at the shared parser level.
+- [x] Empty update bodies and a valid parsed request.
+- [x] Validation failures prevent the controller from running in middleware tests; the existing route tests also prove Prisma is not called for representative invalid requests.
 
-Every validation test should assert the HTTP response and that Prisma was not called.
+Remaining validation coverage:
+
+- [ ] Invalid UUID query filters through each affected HTTP route.
+- [ ] Every degree, requirement, prerequisite, and course-level enum value, including invalid values.
+- [ ] Schema-level defaults for `active`, `operator`, `sequence`, prerequisite type, group number, and alternative flags.
+- [ ] Valid partial updates through resource routes, including the exact Prisma update payload.
+- [ ] Unknown request properties, including an explicit decision/assertion that Zod strips or rejects them.
+- [ ] HTTP-level invalid-date cases and validation/no-Prisma assertions for each request schema.
+
+The remaining work should use route-level tests where possible so each case asserts both the HTTP response and that the relevant Prisma model was not called.
 
 ### Shared response and error behavior
 
-Add tests for:
+Completed coverage in `tests/unit/common-controller.test.ts`, `tests/unit/middleware.test.ts`, and `tests/unit/app.test.ts`:
 
-- Paginated responses with records and with no records.
-- `totalPages`, `skip`, and `take` calculations.
-- Successful get, patch, and `204` delete responses.
-- Prisma `P2002`, `P2025`, and `P2003` mappings.
-- Unexpected errors returning `500`.
-- Async controller errors reaching the error handler.
+- [x] Paginated responses with records and with no records.
+- [x] `totalPages`, `skip`, and `take` calculations.
+- [x] Successful get, create, patch, and `204` delete responses.
+- [x] Prisma `P2002`, `P2025`, and `P2003` mappings.
+- [x] `HttpError` responses and unexpected errors returning `500`.
+
+Remaining shared-behavior coverage:
+
+- [ ] Explicitly test an async controller rejection flowing through `asyncHandler` into the application error handler.
+- [ ] Exercise `P2025`, `P2003`, generic errors, and successful get/patch/delete through actual API routes, not only shared-controller or error-handler unit tests.
+- [ ] Add an assertion for the exact `204` response headers/body contract at the HTTP boundary.
+
+### Authentication utilities and middleware
+
+Completed coverage in `tests/unit/auth-utils.test.ts` and `tests/unit/auth-middleware.test.ts`:
+
+- [x] Email normalization and BYU email detection.
+- [x] Token hashing, session-token generation, verification-code format, and timing-safe code comparison.
+- [x] Cookie extraction, session cookie construction, and cookie clearing in the non-production environment.
+- [x] Missing, valid, revoked, expired, and unknown sessions; hashed-token lookup and `req.userId` assignment.
+
+Remaining auth utility/middleware coverage:
+
+- [ ] Assert `Secure` cookie behavior when `NODE_ENV=production`.
+- [ ] Cover malformed/duplicate cookie values and additional cookie parsing edge cases.
+- [ ] Assert exact `next()`/error behavior for every middleware branch, including a rejected Prisma lookup.
 
 ## Phase 2: resource endpoint tests
 
@@ -321,8 +347,8 @@ Once stable, enforce statement, branch, function, and line coverage thresholds. 
 1. [x] Add Vitest configuration and resolve the worker/setup issue.
 2. [x] Strengthen mock reset behavior and add initial shared test helpers.
 3. [x] Move `app.test.ts` and shared helpers into the separated `tests/` tree and update TypeScript/Vitest paths.
-4. [ ] Add shared middleware, parsing, response, error, and auth utility tests.
-5. [ ] Add `tests/unit/routes/auth.test.ts` and auth middleware coverage.
+4. [x] Add shared middleware, parsing, response, error, and auth utility tests.
+5. [ ] Add `tests/unit/routes/auth.test.ts` and complete the remaining auth middleware edge coverage.
 6. [ ] Complete course CRUD and relationship coverage.
 7. [ ] Add the remaining eight catalog resource route files.
 8. [ ] Complete the route matrix and coverage reporting.
