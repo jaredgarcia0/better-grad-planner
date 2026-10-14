@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document identifies the backend API tests that are still missing and provides a phased plan for implementing them. Steps 1 and 2 are complete: Vitest has explicit configuration, shared test infrastructure exists, and the current smoke suite passes. Resource, middleware, and database-integration coverage remain to be implemented.
+This document identifies the backend API tests that are still missing and provides a phased plan for implementing them. Steps 1 and 2 are complete: Vitest has explicit configuration, shared test infrastructure exists, and the current smoke suite passes. Resource route, authentication route, and database-integration coverage remain to be implemented.
 
 ## Completed work
 
@@ -11,13 +11,15 @@ This document identifies the backend API tests that are still missing and provid
 - Extracted Prisma mocks into `tests/support/prisma-mocks.ts` and switched setup to full mock resets.
 - Added deterministic IDs, starter fixtures, and reusable response assertions under `tests/support/`.
 - Verified `npm run typecheck` passes.
-- Verified the current suite passes: 1 test file and 10 tests.
+- Verified the current suite passes: seven unit test files are present.
 
 The shared helpers are intentionally small. Add remaining model fixtures and assertions as resource suites are implemented.
 
 ## Current state
 
 The existing tests cover health, unknown routes, course validation, course listing, course creation, missing courses, empty updates, and Prisma `P2002` handling. The app now exposes authentication routes in addition to the nine catalog resource areas and nested relationship endpoints. Prisma is mocked, so the current suite does not verify real database constraints, migrations, or seed behavior.
+
+The current route-test scope is still narrow: `app.test.ts` exercises health, unknown-route handling, representative course CRUD/validation/error behavior, and invalid filters across catalog list routes. There are no dedicated authentication or catalog resource route suites yet, and no nested relationship route has a successful test.
 
 ## Recommended test-file structure
 
@@ -115,7 +117,7 @@ Completed coverage in `tests/unit/parse.test.ts`, `tests/unit/middleware.test.ts
 - [x] Invalid UUID path parameters.
 - [x] Pagination defaults, minimum/maximum values, and invalid page/page-size values.
 - [x] Boolean parsing and invalid booleans.
-- [x] Required, optional, nullable, blank, and trimmed strings.
+- [x] Required, optional, nullable, and trimmed strings; optional blank-string semantics remain unverified.
 - [x] Date parsing and invalid dates at the shared parser level.
 - [x] Empty update bodies and a valid parsed request.
 - [x] Validation failures prevent the controller from running in middleware tests; the existing route tests also prove Prisma is not called for representative invalid requests.
@@ -157,7 +159,7 @@ Completed coverage in `tests/unit/auth-utils.test.ts` and `tests/unit/auth-middl
 - [x] Email normalization and BYU email detection.
 - [x] Token hashing, session-token generation, verification-code format, and timing-safe code comparison.
 - [x] Cookie extraction, session cookie construction, and cookie clearing in the non-production environment.
-- [x] Missing, valid, revoked, expired, and unknown sessions; hashed-token lookup and `req.userId` assignment.
+- [x] Missing, valid, revoked, expired, and unknown sessions; hashed-token lookup.
 
 Phase 1 authentication utility and middleware coverage is substantially covered. It includes production `Secure` cookies, duplicate-cookie behavior, and Prisma lookup failures forwarded to `next()`, but the following security and boundary cases remain:
 
