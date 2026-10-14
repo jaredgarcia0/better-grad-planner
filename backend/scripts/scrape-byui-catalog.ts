@@ -1,8 +1,10 @@
-// Scrapes degree programs from the BYU-Idaho academic catalog (hosted on Kuali)
-// and writes them to prisma/data/byui-catalog.json for prisma/seed.ts to load.
+// Scrapes every course and program (majors, minors, clusters, certificates and
+// GE programs) from the BYU-Idaho academic catalog (hosted on Kuali) and writes
+// them to prisma/data/byui-catalog.json for prisma/seed.ts to load.
 //
 // Usage: npx tsx scripts/scrape-byui-catalog.ts [programCode ...]
-// Program codes are the catalog codes, e.g. 440 = Computer Science (BS).
+// Program codes are the catalog codes, e.g. 440 = Computer Science (BS). With
+// no codes, all programs are scraped. All courses are scraped either way.
 
 import { writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
@@ -12,9 +14,18 @@ import { parse, HTMLElement } from "node-html-parser";
 const KUALI = "https://byui.kuali.co/api/v1/catalog";
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT = path.join(currentDir, "../prisma/data/byui-catalog.json");
-const DEFAULT_PROGRAM_CODES = ["440"];
+const CONCURRENCY = 8;
 
-type DegreeType = "ASSOCIATE" | "BACHELOR" | "MASTER" | "DOCTORATE" | "CERTIFICATE" | "OTHER";
+type DegreeType =
+  | "ASSOCIATE"
+  | "BACHELOR"
+  | "MASTER"
+  | "DOCTORATE"
+  | "CERTIFICATE"
+  | "MINOR"
+  | "CLUSTER"
+  | "GENERAL_EDUCATION"
+  | "OTHER";
 type RequirementType = "REQUIRED" | "ELECTIVE" | "CONCENTRATION" | "GENERAL_EDUCATION" | "CAPSTONE" | "OTHER";
 type CourseLevel = "INTRODUCTORY" | "INTERMEDIATE" | "ADVANCED" | "GRADUATE";
 
@@ -31,6 +42,7 @@ interface RequirementGroup {
   operator: "ALL" | "ANY";
   minCourses?: number;
   minCredits?: number;
+  maxCredits?: number;
   courses: RequirementCourse[];
   children: RequirementGroup[];
 }
@@ -58,10 +70,31 @@ type Rule =
   | { kind: "other"; text: string }
   | { kind: "all" | "any"; children: Rule[] };
 
-async function getJson<T = any>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`GET ${url} failed: ${res.status}`);
-  return res.json() as Promise<T>;
+async function getJson<T = any>(url: string, attempts = 3): Promise<T> {
+  for (let i = 1; ; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`GET ${url} failed: ${res.status}`);
+      return (await res.json()) as T;
+    } catch (err) {
+      if (i >= attempts) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * i));
+    }
+  }
+}
+
+// Maps items through fn with at most CONCURRENCY requests in flight.
+async function mapPool<T, R>(items: T[], fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i]);
+    }
+  };
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  return results;
 }
 
 const clean = (s: string) => s.replace(/\s+/g, " ").trim();
@@ -152,11 +185,12 @@ function isRepresentable(cnf: string[][]): boolean {
   return new Set(all).size === all.length;
 }
 
-function ruleCourses(rule: Rule | null): string[] {
-  if (!rule) return [];
-  if (rule.kind === "course") return [rule.code];
-  if (rule.kind === "other") return [];
-  return rule.children.flatMap(ruleCourses);
+// Courses missing from the catalog (retired, typos) can't be linked, so they
+// become non-course conditions.
+function withKnownCourses(rule: Rule, known: Set<string>): Rule {
+  if (rule.kind === "course") return known.has(rule.code) ? rule : { kind: "other", text: rule.code };
+  if (rule.kind === "other") return rule;
+  return { kind: rule.kind, children: rule.children.map((r) => withKnownCourses(r, known)) };
 }
 
 function ruleText(html: string | undefined): string | undefined {
@@ -183,6 +217,9 @@ function degreeType(program: any): DegreeType {
   if (/Master/i.test(s)) return "MASTER";
   if (/Doctor/i.test(s)) return "DOCTORATE";
   if (/Certificate/i.test(s)) return "CERTIFICATE";
+  if (/Minor/i.test(s)) return "MINOR";
+  if (/Cluster/i.test(s)) return "CLUSTER";
+  if (/General Education/i.test(s)) return "GENERAL_EDUCATION";
   return "OTHER";
 }
 
@@ -193,8 +230,9 @@ function parseProgramRule(
   minGrade: string | undefined,
 ): RequirementGroup {
   const text = clean(li.text);
-  const codes = courseCodesIn(li);
-  const credits = Number(/Take at least (\d+) credit/i.exec(text)?.[1]) || undefined;
+  const codes = [...new Set(courseCodesIn(li))];
+  const credits = Number(/Take at least (\d+(?:\.\d+)?) credit/i.exec(text)?.[1]) || undefined;
+  const creditRange = /Take between (\d+(?:\.\d+)?) and (\d+(?:\.\d+)?) credit/i.exec(text);
   const group: RequirementGroup = {
     name,
     requirementType: "REQUIRED",
@@ -203,7 +241,13 @@ function parseProgramRule(
     children: [],
   };
 
-  if (/complete the following program/i.test(text)) {
+  if (creditRange) {
+    group.operator = "ANY";
+    group.requirementType = "ELECTIVE";
+    group.minCredits = Number(creditRange[1]);
+    group.maxCredits = Number(creditRange[2]);
+    if (codes.length === 0) group.description = text;
+  } else if (/complete the following program/i.test(text)) {
     group.requirementType = /GE\b|General Education/i.test(text) ? "GENERAL_EDUCATION" : "OTHER";
     group.minCredits = credits;
     group.description = text;
@@ -225,139 +269,180 @@ function parseProgramRule(
   return group;
 }
 
+interface ProgramRuleItem {
+  li: HTMLElement;
+  label: string;
+}
+
+// A program rule list holds <li>s, or <div>s wrapping an <li> under a <span>
+// label: a connector ("AND"/"OR"), an option name, or a note.
+function programRuleItems(ul: HTMLElement): ProgramRuleItem[] {
+  return ul.childNodes
+    .filter((n): n is HTMLElement => n instanceof HTMLElement)
+    .flatMap((child) => {
+      if (child.tagName === "LI") return [{ li: child, label: "" }];
+      const li = child.querySelector(":scope > li");
+      return li ? [{ li, label: child.querySelector(":scope > span")?.text.trim() ?? "" }] : [];
+    });
+}
+
+const isLeafRule = (li: HTMLElement) => li.getAttribute("data-test")?.startsWith("ruleView") ?? false;
+
+// Leaf rules such as "GE103 is for Online students only." are notes, not
+// requirements; as children of an ANY group they would count as satisfied.
+const isNoteRule = (li: HTMLElement) =>
+  isLeafRule(li) && courseCodesIn(li).length === 0 && !/^Take\b|complete the following program/i.test(clean(li.text));
+
+// Parses a rule, or a "Complete all/N of the following" group of rules, into a
+// requirement group. Groups nest arbitrarily deep.
+function parseProgramItem(item: ProgramRuleItem, fallbackName: string, minGrade: string | undefined): RequirementGroup {
+  const [firstLine, ...rest] = item.label.split("\n");
+  let label = clean(firstLine);
+  let notes = clean(rest.join(" "));
+  if (/^(AND|OR)$/i.test(label)) label = "";
+  else if (/^NOTE\b/i.test(label) || (!/^Option\b/i.test(label) && label.split(" ").length > 5)) {
+    notes = clean(item.label);
+    label = "";
+  }
+  const name = label || fallbackName;
+
+  let group: RequirementGroup;
+  if (isLeafRule(item.li)) {
+    group = parseProgramRule(item.li, name, minGrade);
+  } else {
+    const header = clean(item.li.querySelector(":scope > span")?.text ?? "");
+    const operator = /^Complete all/i.test(header) ? "ALL" : "ANY";
+    const list = item.li.querySelector(":scope > ul");
+    const items = list ? programRuleItems(list) : [];
+    const ruleNotes = items.filter((c) => isNoteRule(c.li)).map((c) => clean(c.li.text));
+    group = {
+      name,
+      description: [header, ...ruleNotes].join(" ") || undefined,
+      requirementType: "REQUIRED",
+      operator,
+      courses: [],
+      children: items
+        .filter((c) => !isNoteRule(c.li))
+        .map((c, i) => parseProgramItem(c, operator === "ANY" ? `Option ${i + 1}` : name, minGrade)),
+    };
+  }
+  if (notes) group.description = [notes, group.description].filter(Boolean).join(" ");
+  return group;
+}
+
 function parseProgramRequirements(html: string, minGrade: string | undefined): RequirementGroup[] {
   const root = parse(html);
-  return root.querySelectorAll("section").map((section) => {
+  return root.querySelectorAll("section").flatMap((section) => {
     const name = clean(section.querySelector("h2")?.text ?? "Requirements");
     const totalCredits = Number(clean(section.querySelector("header > div:nth-child(2) > span")?.text ?? "")) || undefined;
-    const list = section.querySelector(":scope > div > div > ul")!;
-    const item = list.querySelector(":scope > li")!;
-    let group: RequirementGroup;
-
-    if (item.getAttribute("data-test")?.startsWith("ruleView")) {
-      group = parseProgramRule(item, name, minGrade);
-    } else {
-      // "Complete 1 of the following" with an option per child rule.
-      const header = clean(item.querySelector(":scope > span")?.text ?? "");
-      const options = item.querySelector(":scope > ul")!.childNodes.filter(
-        (n): n is HTMLElement => n instanceof HTMLElement,
-      );
-      group = {
-        name,
-        description: header,
-        requirementType: "REQUIRED",
-        operator: /^Complete all/i.test(header) ? "ALL" : "ANY",
-        courses: [],
-        children: options.map((opt, i) => {
-          const label = opt.querySelector(":scope > span")?.text.trim() ?? "";
-          const [optionName, ...notes] = label.split("\n");
-          const li = opt.tagName === "LI" ? opt : opt.querySelector(":scope > li")!;
-          const child = parseProgramRule(li, clean(optionName) || `Option ${i + 1}`, minGrade);
-          if (notes.length) child.description = clean(notes.join(" "));
-          return child;
-        }),
-      };
-      if (group.operator === "ANY") group.minCourses = undefined;
-    }
+    const list = section.querySelector(":scope > div > div > ul");
+    const items = list ? programRuleItems(list) : [];
+    if (items.length === 0) return [];
+    const group: RequirementGroup =
+      items.length === 1
+        ? parseProgramItem(items[0], name, minGrade)
+        : {
+            name,
+            requirementType: "REQUIRED",
+            operator: "ALL",
+            courses: [],
+            children: items.map((c) => parseProgramItem(c, name, minGrade)),
+          };
 
     if (/elective/i.test(name) && group.requirementType === "REQUIRED") group.requirementType = "ELECTIVE";
     group.minCredits ??= totalCredits;
-    return group;
+    return [group];
   });
 }
 
 async function main() {
-  const programCodes = process.argv.slice(2).length ? process.argv.slice(2) : DEFAULT_PROGRAM_CODES;
+  const requestedCodes = process.argv.slice(2);
 
   const catalog = await getJson(`${KUALI}/public/catalogs/current`);
   const catalogYear = Number(/(\d{4})/.exec(catalog.title)?.[1]);
+  if (!catalogYear) throw new Error(`Couldn't read a catalog year from "${catalog.title}"`);
   console.log(`Catalog: ${catalog.title} (${catalog._id})`);
 
   const [programList, courseList] = await Promise.all([
     getJson<any[]>(`${KUALI}/programs/${catalog._id}`),
     getJson<any[]>(`${KUALI}/courses/${catalog._id}`),
   ]);
-  const coursesByCode = new Map(courseList.map((c) => [c.__catalogCourseId, c]));
+  const knownCourses = new Set<string>(courseList.map((c) => c.__catalogCourseId));
 
-  const courseDetails = new Map<string, any>();
-  async function loadCourse(code: string) {
-    if (courseDetails.has(code)) return courseDetails.get(code);
-    const summary = coursesByCode.get(code);
-    if (!summary) throw new Error(`Course ${code} not found in catalog`);
-    const detail = await getJson(`${KUALI}/course/${catalog._id}/${summary.pid}`);
-    courseDetails.set(code, detail);
-    return detail;
-  }
+  const programSummaries = requestedCodes.length
+    ? requestedCodes.map((code) => {
+        const summary = programList.find((p) => p.code === code);
+        if (!summary) throw new Error(`Program ${code} not found in catalog`);
+        return summary;
+      })
+    : programList;
 
-  const programs = [];
-  const programCourseCodes = new Set<string>();
-  for (const code of programCodes) {
-    const summary = programList.find((p) => p.code === code);
-    if (!summary) throw new Error(`Program ${code} not found in catalog`);
-    const program = await getJson(`${KUALI}/program/${catalog._id}/${summary.pid}`);
+  console.log(`Fetching ${programSummaries.length} programs...`);
+  const programDetails = await mapPool(programSummaries, (p) => getJson(`${KUALI}/program/${catalog._id}/${p.pid}`));
+  console.log(`Fetching ${courseList.length} courses...`);
+  const courseDetails = await mapPool(courseList, (c) => getJson(`${KUALI}/course/${catalog._id}/${c.pid}`));
+
+  // Program rules occasionally name courses missing from the catalog; those
+  // can't be linked, so they're dropped (the rule text is kept in descriptions).
+  const droppedCourses = new Map<string, Set<string>>();
+  const dropUnknownCourses = (group: RequirementGroup, programCode: string) => {
+    group.courses = group.courses.filter((c) => {
+      if (knownCourses.has(c.code)) return true;
+      droppedCourses.set(c.code, (droppedCourses.get(c.code) ?? new Set()).add(programCode));
+      return false;
+    });
+    group.children.forEach((child) => dropUnknownCourses(child, programCode));
+  };
+
+  const programs = programDetails.map((program) => {
     const minGrade = /grades of (\S+) or higher in major courses/i.exec(program.programNotes ?? "")?.[1];
     const html: string = program.newProgramRules1 ?? "";
-    courseCodesIn(parse(html)).forEach((c) => programCourseCodes.add(c));
-
-    programs.push({
+    const requirementGroups = parseProgramRequirements(html, minGrade);
+    requirementGroups.forEach((g) => dropUnknownCourses(g, program.code));
+    return {
       code: program.code,
       name: program.title,
       degreeType: degreeType(program),
       catalogYear,
-      description: program.description,
-      totalCredits: Number(/Grand Total Credits:\s*(?:<[^>]+>)*\s*(\d+)/.exec(html)?.[1]) || undefined,
-      requirementGroups: parseProgramRequirements(html, minGrade),
-    });
-    console.log(`Program: ${program.title} (${program.code})`);
-  }
+      description: program.description || undefined,
+      totalCredits: Number(/Grand Total Credits:\s*(?:<[^>]+>)*\s*(\d+(?:\.\d+)?)/.exec(html)?.[1]) || undefined,
+      requirementGroups,
+    };
+  });
+  programs.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
 
-  // Program courses get full prerequisite data. Courses they reference as
-  // prerequisites are included too, so those links resolve, but their own
-  // prerequisites are left out to keep the scope to this program.
-  const courses: Course[] = [];
   const unrepresentable: string[] = [];
-  const referenced = new Set<string>();
-  const toCourse = (code: string, d: any, withRules: boolean): Course => {
+  const courses: Course[] = courseList.map((summary, i) => {
+    const d = courseDetails[i];
+    const code: string = summary.__catalogCourseId;
     const credits = d.credits?.credits ?? {};
     const course: Course = {
       code,
       title: d.title,
       description: d.description || undefined,
-      credits: Number(credits.min ?? d.credits?.value ?? 0),
+      credits: Number(credits.min ?? d.credits?.value ?? 0) || 0,
       level: courseLevel(code),
       departmentCode: d.department?.customFields?.["CX Department Code"],
+      prerequisites: [],
+      corequisites: [],
     };
-    if (!withRules) return course;
-    course.prerequisites = [];
-    course.corequisites = [];
     for (const [field, html] of [
       ["prerequisites", d.prerequisites],
       ["corequisites", d.coRequisites],
     ] as const) {
       const rule = parseRuleHtml(html);
       if (!rule) continue;
-      ruleCourses(rule).forEach((c) => referenced.add(c));
-      const cnf = toCnf(rule);
+      const cnf = toCnf(withKnownCourses(rule, knownCourses));
       course[field] = isRepresentable(cnf) ? cnf : null;
       if (!isRepresentable(cnf)) unrepresentable.push(`${code} ${field}`);
       course[field === "prerequisites" ? "prerequisiteText" : "corequisiteText"] = ruleText(html);
     }
     return course;
-  };
-
-  for (const code of programCourseCodes) courses.push(toCourse(code, await loadCourse(code), true));
-  for (const code of referenced) {
-    if (programCourseCodes.has(code)) continue;
-    if (!coursesByCode.has(code)) {
-      console.warn(`  Skipping unknown prerequisite course ${code}`);
-      continue;
-    }
-    courses.push(toCourse(code, await loadCourse(code), false));
-  }
+  });
   courses.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
 
   const departments = new Map<string, string>();
-  for (const d of courseDetails.values()) {
+  for (const d of courseDetails) {
     const dept = d.department;
     if (dept?.customFields?.["CX Department Code"]) departments.set(dept.customFields["CX Department Code"], dept.name);
   }
@@ -378,8 +463,11 @@ async function main() {
   mkdirSync(path.dirname(OUTPUT), { recursive: true });
   writeFileSync(OUTPUT, JSON.stringify(data, null, 2) + "\n");
   console.log(`Wrote ${courses.length} courses, ${programs.length} program(s) to ${path.relative(process.cwd(), OUTPUT)}`);
+  for (const [code, programCodes] of droppedCourses) {
+    console.warn(`Dropped ${code} (not in catalog) from programs: ${[...programCodes].join(", ")}`);
+  }
   if (unrepresentable.length) {
-    console.warn(`Rules too complex for the schema (left null, see *Text fields): ${unrepresentable.join(", ")}`);
+    console.warn(`${unrepresentable.length} rules too complex for the schema (left null, see *Text fields): ${unrepresentable.join(", ")}`);
   }
 }
 

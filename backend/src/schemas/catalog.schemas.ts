@@ -1,9 +1,11 @@
 import { z } from "zod";
 import {
   booleanSchema,
+  creditsSchema,
   dateSchema,
   integerSchema,
   optionalBooleanSchema,
+  optionalCreditsSchema,
   optionalIntegerSchema,
   optionalStringSchema,
   queryStringSchema,
@@ -17,6 +19,9 @@ const degreeTypeSchema = z.enum([
   "MASTER",
   "DOCTORATE",
   "CERTIFICATE",
+  "MINOR",
+  "CLUSTER",
+  "GENERAL_EDUCATION",
   "OTHER",
 ]);
 const requirementTypeSchema = z.enum([
@@ -83,7 +88,7 @@ export const createProgramSchema = z.object({
   degreeType: degreeTypeSchema,
   catalogYear: optionalIntegerSchema,
   description: optionalStringSchema,
-  totalCredits: optionalIntegerSchema,
+  totalCredits: optionalCreditsSchema,
 });
 export const updateProgramSchema = createProgramSchema.partial();
 
@@ -103,8 +108,8 @@ export const createRequirementSchema = z.object({
   sequence: integerSchema.default(0),
   minCourses: optionalIntegerSchema,
   maxCourses: optionalIntegerSchema,
-  minCredits: optionalIntegerSchema,
-  maxCredits: optionalIntegerSchema,
+  minCredits: optionalCreditsSchema,
+  maxCredits: optionalCreditsSchema,
 });
 export const updateRequirementSchema = createRequirementSchema.partial();
 
@@ -121,7 +126,7 @@ export const createCourseSchema = z.object({
   code: requiredStringSchema,
   title: requiredStringSchema,
   description: optionalStringSchema,
-  credits: integerSchema,
+  credits: creditsSchema,
   level: courseLevelSchema.nullable().optional(),
   active: optionalBooleanSchema.default(true),
 });
@@ -136,7 +141,7 @@ export const createRequirementCourseSchema = z.object({
   courseId: uuidSchema,
   sequence: integerSchema.default(0),
   minGrade: optionalStringSchema,
-  creditsOverride: optionalIntegerSchema,
+  creditsOverride: optionalCreditsSchema,
 });
 export const updateRequirementCourseSchema =
   createRequirementCourseSchema.partial();
