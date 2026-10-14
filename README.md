@@ -20,6 +20,7 @@ Built as a web app, with a React frontend, Express backend, and PostreSQL databa
 - [ ] Full Database of BYUI Programs and Courses
 - [ ] Accounts per-student
 - [ ] Class schedule planner
+- [ ] Multiple degree plans per account
 
 ## Team Communication
 
