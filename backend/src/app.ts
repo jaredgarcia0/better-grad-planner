@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { authRouter } from "./routes/auth.routes.js";
+import { completedCoursesRouter } from "./routes/completed-courses.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 import { coursesRouter } from "./routes/courses.routes.js";
@@ -8,9 +9,11 @@ import { departmentsRouter } from "./routes/departments.routes.js";
 import { offeringsRouter } from "./routes/offerings.routes.js";
 import { prerequisitesRouter } from "./routes/prerequisites.routes.js";
 import { programsRouter } from "./routes/programs.routes.js";
+import { plansRouter } from "./routes/plans.routes.js";
 import { requirementCoursesRouter } from "./routes/requirement-courses.routes.js";
 import { requirementsRouter } from "./routes/requirements.routes.js";
 import { termsRouter } from "./routes/terms.routes.js";
+import { transferCoursesRouter } from "./routes/transfer-courses.routes.js";
 import { universitiesRouter } from "./routes/universities.routes.js";
 
 export const app = express();
@@ -28,6 +31,9 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/plans", plansRouter);
+app.use("/api/completed-courses", completedCoursesRouter);
+app.use("/api/transfer-courses", transferCoursesRouter);
 app.use("/api/universities", universitiesRouter);
 app.use("/api/departments", departmentsRouter);
 app.use("/api/programs", programsRouter);

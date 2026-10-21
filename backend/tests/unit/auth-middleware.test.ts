@@ -15,7 +15,7 @@ function run(req: any) {
       resolve();
     });
   });
-  return { next, promise };
+  return { next, promise, req };
 }
 
 describe("requireAuth", () => {
@@ -28,17 +28,28 @@ describe("requireAuth", () => {
     expect(prismaMocks.session.findUnique).not.toHaveBeenCalled();
   });
 
-  it("looks up the hashed token and attaches the user id for a valid session", async () => {
-    prismaMocks.session.findUnique.mockResolvedValue({ userId: "user-1", revokedAt: null, expiresAt: new Date(Date.now() + 60_000) });
-    const { next, promise } = run({ headers: { cookie: "bgp_session=secret" } });
+  it("looks up the hashed token and attaches the authenticated user for a valid session", async () => {
+    const user = { id: "user-1", email: "student@byui.edu" };
+    prismaMocks.session.findUnique.mockResolvedValue({
+      userId: user.id,
+      user,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    const { next, promise, req } = run({ headers: { cookie: "bgp_session=secret" } });
     await promise;
-    expect(prismaMocks.session.findUnique).toHaveBeenCalledWith({ where: { tokenHash: hashToken("secret") } });
+    expect(prismaMocks.session.findUnique).toHaveBeenCalledWith({
+      where: { tokenHash: hashToken("secret") },
+      include: { user: true },
+    });
+    expect(req.userId).toBe(user.id);
+    expect(req.user).toBe(user);
     expect(next).toHaveBeenCalledWith();
   });
 
   it.each([
-    [{ userId: "user-1", revokedAt: new Date(), expiresAt: new Date(Date.now() + 60_000) }],
-    [{ userId: "user-1", revokedAt: null, expiresAt: new Date(Date.now() - 60_000) }],
+    [{ userId: "user-1", user: { id: "user-1" }, revokedAt: new Date(), expiresAt: new Date(Date.now() + 60_000) }],
+    [{ userId: "user-1", user: { id: "user-1" }, revokedAt: null, expiresAt: new Date(Date.now() - 60_000) }],
     [null],
   ])("rejects revoked, expired, or unknown sessions", async (session) => {
     prismaMocks.session.findUnique.mockResolvedValue(session);

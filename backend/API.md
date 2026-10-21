@@ -63,6 +63,48 @@ Every resource has `GET /`, `POST /`, `GET /:id`, `PATCH /:id`, and `DELETE /:id
 | Prerequisites | `/api/prerequisites` | `courseId`, `prerequisiteCourseId`, `type` |
 | Academic terms | `/api/terms` | `q`, `universityId` |
 | Course offerings | `/api/offerings` | `courseId`, `termId` |
+| Degree plans | `/api/plans` | `status` |
+| Completed courses | `/api/completed-courses` | — |
+| Transfer courses | `/api/transfer-courses` | — |
+
+## Student records
+
+Degree plans, planned courses, completed courses, and transfer courses require
+an authenticated session. These resources are always scoped to the current
+user; a request for another user's record returns `404`.
+
+```text
+GET    /api/plans
+POST   /api/plans
+GET    /api/plans/:id
+PATCH  /api/plans/:id
+DELETE /api/plans/:id
+
+GET    /api/plans/:planId/courses
+POST   /api/plans/:planId/courses
+GET    /api/plans/:planId/courses/:courseEntryId
+PATCH  /api/plans/:planId/courses/:courseEntryId
+DELETE /api/plans/:planId/courses/:courseEntryId
+
+GET    /api/completed-courses
+POST   /api/completed-courses
+GET    /api/completed-courses/:id
+PATCH  /api/completed-courses/:id
+DELETE /api/completed-courses/:id
+
+GET    /api/transfer-courses
+POST   /api/transfer-courses
+GET    /api/transfer-courses/:id
+PATCH  /api/transfer-courses/:id
+DELETE /api/transfer-courses/:id
+```
+
+Plan creation accepts `programId`, `name`, optional `notes`, optional `status`
+(`DRAFT`, `ARCHIVED`, or `DECLARED`), and optional `isDefault`. Planned-course
+creation accepts `courseId`, optional `termId`, `sequence`, and optional
+`notes`. Completed courses accept `courseId`, optional `termId`, `grade`,
+`creditsEarned`, and `completedOn`; transfer courses replace `termId` with an
+optional `transferSource`.
 
 ## Relationship endpoints
 
@@ -97,4 +139,3 @@ Create requests use JSON. For example:
 }
 ```
 
-Graduation plans are not persisted yet; the current frontend still keeps planned courses in local React state.

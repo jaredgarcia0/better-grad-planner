@@ -7,6 +7,7 @@ type MockModel = {
   findFirst: ReturnType<typeof vi.fn>;
   create: ReturnType<typeof vi.fn>;
   update: ReturnType<typeof vi.fn>;
+  updateMany: ReturnType<typeof vi.fn>;
   delete: ReturnType<typeof vi.fn>;
   deleteMany: ReturnType<typeof vi.fn>;
   $transaction: ReturnType<typeof vi.fn>;
@@ -19,6 +20,7 @@ const createModel = (): MockModel => ({
   findFirst: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
+  updateMany: vi.fn(),
   delete: vi.fn(),
   deleteMany: vi.fn(),
   $transaction: vi.fn(),
@@ -38,6 +40,10 @@ export const prismaMocks = {
   session: createModel(),
   emailVerificationCode: createModel(),
   passwordResetCode: createModel(),
+  degreePlan: createModel(),
+  plannedCourse: createModel(),
+  completedCourse: createModel(),
+  transferCourse: createModel(),
 };
 
 export function resetPrismaMocks() {
