@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Course, listCourses } from "../api/client";
 
-type CourseSearchProps = { plannedCourseIds: Set<string>; onAdd: (course: Course) => void };
+type CourseSearchProps = {
+  plannedCourseIds: Set<string>;
+  onAdd: (course: Course) => void;
+};
 
 export function CourseSearch({ plannedCourseIds, onAdd }: CourseSearchProps) {
   const [query, setQuery] = useState("");
@@ -19,7 +22,11 @@ export function CourseSearch({ plannedCourseIds, onAdd }: CourseSearchProps) {
         setCourses(result.data);
         setTotal(result.pagination.total);
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : "Unable to load courses");
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Unable to load courses",
+        );
       } finally {
         setLoading(false);
       }
@@ -38,10 +45,18 @@ export function CourseSearch({ plannedCourseIds, onAdd }: CourseSearchProps) {
       </div>
       <label className="search-box">
         <span aria-hidden="true">⌕</span>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by course code or title" />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search by course code or title"
+        />
       </label>
       {loading && <p className="muted">Loading courses…</p>}
-      {error && <p className="error-message">{error}. Is the backend running on port 3000?</p>}
+      {error && (
+        <p className="error-message">
+          {error}. Is the backend running on port 3000?
+        </p>
+      )}
       {!loading && !error && (
         <div className="course-list">
           {courses.map((course) => (
@@ -50,12 +65,19 @@ export function CourseSearch({ plannedCourseIds, onAdd }: CourseSearchProps) {
                 <strong>{course.code}</strong>
                 <p>{course.title}</p>
               </div>
-              <button className="add-course-button" type="button" onClick={() => onAdd(course)} disabled={plannedCourseIds.has(course.id)}>
+              <button
+                className="add-course-button"
+                type="button"
+                onClick={() => onAdd(course)}
+                disabled={plannedCourseIds.has(course.id)}
+              >
                 {plannedCourseIds.has(course.id) ? "Added" : "+ Add"}
               </button>
             </article>
           ))}
-          {courses.length === 0 && <p className="muted">No courses matched your search.</p>}
+          {courses.length === 0 && (
+            <p className="muted">No courses matched your search.</p>
+          )}
         </div>
       )}
     </section>

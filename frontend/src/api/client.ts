@@ -15,16 +15,37 @@ export type Course = {
   department?: { name?: string; code?: string } | null;
 };
 
-export type University = { id: string; name: string; shortName?: string | null };
+export type University = {
+  id: string;
+  name: string;
+  shortName?: string | null;
+};
 export type Program = { id: string; name: string; degreeType?: string | null };
-export type RequirementGroup = { id: string; name: string; requirementType: string; minCredits?: number | null; maxCredits?: number | null };
-export type RequirementCourseLink = { id: string; courseId: string; creditsOverride?: number | null };
+export type RequirementGroup = {
+  id: string;
+  name: string;
+  requirementType: string;
+  minCredits?: number | null;
+  maxCredits?: number | null;
+};
+export type RequirementCourseLink = {
+  id: string;
+  courseId: string;
+  creditsOverride?: number | null;
+};
 export type ApiList<T> = { data: T[]; pagination: Pagination };
-export type User = { id: string; email: string; emailVerifiedAt: string | null };
+export type User = {
+  id: string;
+  email: string;
+  emailVerifiedAt: string | null;
+};
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? "";
 
-export async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
+export async function apiRequest<T>(
+  path: string,
+  options?: RequestInit,
+): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     headers: { "Content-Type": "application/json", ...options?.headers },
     credentials: "include",
@@ -40,7 +61,9 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
     } catch {
       // Keep the raw response when the server did not return JSON.
     }
-    throw new Error(`API request failed (${response.status}): ${message || response.statusText}`);
+    throw new Error(
+      `API request failed (${response.status}): ${message || response.statusText}`,
+    );
   }
 
   if (response.status === 204) return undefined as T;
@@ -107,11 +130,15 @@ export function listPrograms(query = "") {
 }
 
 export function listProgramRequirements(programId: string) {
-  return apiRequest<ApiList<RequirementGroup>>(`/api/programs/${programId}/requirements?pageSize=100`);
+  return apiRequest<ApiList<RequirementGroup>>(
+    `/api/programs/${programId}/requirements?pageSize=100`,
+  );
 }
 
 export function listRequirementCourses(requirementId: string) {
-  return apiRequest<ApiList<RequirementCourseLink>>(`/api/requirements/${requirementId}/courses?pageSize=100`);
+  return apiRequest<ApiList<RequirementCourseLink>>(
+    `/api/requirements/${requirementId}/courses?pageSize=100`,
+  );
 }
 
 export function getCourse(courseId: string) {
