@@ -27,6 +27,7 @@ const createModel = (): MockModel => ({
 });
 
 export const prismaMocks = {
+  $transaction: vi.fn(),
   course: createModel(),
   coursePrerequisite: createModel(),
   courseOffering: createModel(),

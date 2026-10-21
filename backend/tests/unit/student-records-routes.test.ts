@@ -135,4 +135,106 @@ describe("student record routes", () => {
       },
     });
   });
+
+  it("lists, updates, and deletes only the authenticated user's plans", async () => {
+    const plan = { id: planId, userId: testIds.user, name: "Plan" };
+    prismaMocks.degreePlan.findMany.mockResolvedValue([plan]);
+    prismaMocks.degreePlan.count.mockResolvedValue(1);
+    let response = await request(app).get("/api/plans?status=DRAFT").set("Cookie", authCookie);
+    expect(response.status).toBe(200);
+    expect(prismaMocks.degreePlan.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { userId: testIds.user, status: "DRAFT" },
+    }));
+
+    response = await request(app).get("/api/plans").set("Cookie", authCookie);
+    expect(response.status).toBe(200);
+    expect(prismaMocks.degreePlan.findMany).toHaveBeenLastCalledWith(expect.objectContaining({
+      where: { userId: testIds.user },
+    }));
+
+    prismaMocks.degreePlan.findFirst.mockResolvedValue(plan);
+    prismaMocks.degreePlan.update.mockResolvedValue({ ...plan, name: "Updated" });
+    response = await request(app).patch(`/api/plans/${planId}`).set("Cookie", authCookie).send({ name: "Updated" });
+    expect(response.status).toBe(200);
+
+    response = await request(app).patch(`/api/plans/${planId}`).set("Cookie", authCookie).send({ isDefault: true });
+    expect(response.status).toBe(200);
+    expect(prismaMocks.degreePlan.updateMany).toHaveBeenLastCalledWith({
+      where: { userId: testIds.user, isDefault: true, NOT: { id: planId } },
+      data: { isDefault: false },
+    });
+
+    prismaMocks.degreePlan.delete.mockResolvedValue(plan);
+    response = await request(app).delete(`/api/plans/${planId}`).set("Cookie", authCookie);
+    expect(response.status).toBe(204);
+  });
+
+  it("lists, reads, updates, and deletes courses within an owned plan", async () => {
+    const plan = { id: planId, userId: testIds.user };
+    const plannedCourse = { id: entryId, planId, courseId: testIds.course, sequence: 0 };
+    prismaMocks.degreePlan.findFirst.mockResolvedValue(plan);
+    prismaMocks.plannedCourse.findMany.mockResolvedValue([plannedCourse]);
+    prismaMocks.plannedCourse.count.mockResolvedValue(1);
+    let response = await request(app).get(`/api/plans/${planId}/courses?termId=${testIds.term}`).set("Cookie", authCookie);
+    expect(response.status).toBe(200);
+
+    prismaMocks.plannedCourse.findFirst.mockResolvedValue(plannedCourse);
+    response = await request(app).get(`/api/plans/${planId}/courses/${entryId}`).set("Cookie", authCookie);
+    expect(response.status).toBe(200);
+
+    prismaMocks.plannedCourse.update.mockResolvedValue({ ...plannedCourse, sequence: 1 });
+    response = await request(app).patch(`/api/plans/${planId}/courses/${entryId}`).set("Cookie", authCookie).send({ sequence: 1 });
+    expect(response.status).toBe(200);
+
+    prismaMocks.plannedCourse.delete.mockResolvedValue(plannedCourse);
+    response = await request(app).delete(`/api/plans/${planId}/courses/${entryId}`).set("Cookie", authCookie);
+    expect(response.status).toBe(204);
+  });
+
+  it.each([
+    ["completed-courses", "completedCourse"],
+    ["transfer-courses", "transferCourse"],
+  ] as const)("lists, reads, updates, and deletes owned %s", async (path, modelName) => {
+    const model = prismaMocks[modelName];
+    const record = { id: entryId, userId: testIds.user, courseId: testIds.course };
+    model.findMany.mockResolvedValue([record]);
+    model.count.mockResolvedValue(1);
+    let response = await request(app).get(`/api/${path}`).set("Cookie", authCookie);
+    expect(response.status).toBe(200);
+
+    model.findFirst.mockResolvedValue(record);
+    response = await request(app).get(`/api/${path}/${entryId}`).set("Cookie", authCookie);
+    expect(response.status).toBe(200);
+
+    model.update.mockResolvedValue(record);
+    response = await request(app).patch(`/api/${path}/${entryId}`).set("Cookie", authCookie).send({ grade: "A" });
+    expect(response.status).toBe(200);
+
+    model.delete.mockResolvedValue(record);
+    response = await request(app).delete(`/api/${path}/${entryId}`).set("Cookie", authCookie);
+    expect(response.status).toBe(204);
+  });
+
+  it("rejects empty updates and invalid student-record filters before controller queries", async () => {
+    let response = await request(app).patch(`/api/plans/${planId}`).set("Cookie", authCookie).send({});
+    expect(response.status).toBe(400);
+    expect(prismaMocks.degreePlan.findFirst).not.toHaveBeenCalled();
+
+    response = await request(app).get("/api/plans?status=INVALID").set("Cookie", authCookie);
+    expect(response.status).toBe(400);
+    expect(prismaMocks.degreePlan.findMany).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 when an owned plan course or course record cannot be found", async () => {
+    prismaMocks.degreePlan.findFirst.mockResolvedValue({ id: planId, userId: testIds.user });
+    prismaMocks.plannedCourse.findFirst.mockResolvedValue(null);
+    let response = await request(app)
+      .get(`/api/plans/${planId}/courses/${entryId}`)
+      .set("Cookie", authCookie);
+    expect(response.status).toBe(404);
+
+    prismaMocks.completedCourse.findFirst.mockResolvedValue(null);
+    response = await request(app).get(`/api/completed-courses/${entryId}`).set("Cookie", authCookie);
+    expect(response.status).toBe(404);
+  });
 });
