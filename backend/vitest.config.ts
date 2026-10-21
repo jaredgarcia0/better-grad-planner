@@ -13,5 +13,15 @@ export default defineConfig({
     restoreMocks: true,
     include: ["tests/unit/**/*.test.ts"],
     exclude: ["node_modules", "dist", "tests/integration/**"],
+    coverage: {
+      provider: "v8",
+      exclude: ["tests/**"],
+      thresholds: {
+        statements: 90,
+        branches: 90,
+        functions: 90,
+        lines: 90,
+      },
+    },
   },
 });

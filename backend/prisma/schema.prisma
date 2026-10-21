@@ -47,52 +47,64 @@ enum CourseLevel {
   GRADUATE
 }
 
+enum DegreePlanStatus {
+  DRAFT
+  ARCHIVED
+  DECLARED
+}
+
 model User {
-  id                     String                 @id @default(uuid()) @db.Uuid
-  email                  String                 @unique
+  id                     String                  @id @default(uuid()) @db.Uuid
+  email                  String                  @unique
   passwordHash           String
+  preferredName          String?
+  gradTermId             String?                 @db.Uuid
   emailVerifiedAt        DateTime?
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
   sessions               Session[]
   emailVerificationCodes EmailVerificationCode[]
   passwordResetCodes     PasswordResetCode[]
+  degreePlans            DegreePlan[]
+  completedCourses       CompletedCourse[]
+  transferCourses        TransferCourse[]
+  gradTerm               AcademicTerm?           @relation(fields: [gradTermId], references: [id], onDelete: SetNull)
 }
 
 model Session {
-  id           String    @id @default(uuid()) @db.Uuid
-  userId       String    @db.Uuid
-  tokenHash    String    @unique
-  expiresAt    DateTime
-  revokedAt    DateTime?
-  createdAt    DateTime  @default(now())
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
 }
 
 model EmailVerificationCode {
-  id         String    @id @default(uuid()) @db.Uuid
-  userId     String    @db.Uuid
-  codeHash   String
-  attempts   Int       @default(0)
-  expiresAt  DateTime
-  usedAt     DateTime?
-  createdAt  DateTime  @default(now())
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  codeHash  String
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
 }
 
 model PasswordResetCode {
-  id         String    @id @default(uuid()) @db.Uuid
-  userId     String    @db.Uuid
-  codeHash   String
-  attempts   Int       @default(0)
-  expiresAt  DateTime
-  usedAt     DateTime?
-  createdAt  DateTime  @default(now())
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  codeHash  String
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
 }
@@ -137,6 +149,7 @@ model DegreeProgram {
   totalCredits      Float?
   university        University         @relation(fields: [universityId], references: [id], onDelete: Restrict)
   requirementGroups RequirementGroup[]
+  degreePlans       DegreePlan[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -166,6 +179,82 @@ model RequirementGroup {
 
   @@index([programId, sequence])
   @@index([parentId, sequence])
+}
+
+model DegreePlan {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  programId String           @db.Uuid
+  name      String
+  notes     String?
+  status    DegreePlanStatus @default(DRAFT)
+  isDefault Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program DegreeProgram   @relation(fields: [programId], references: [id], onDelete: Restrict)
+  courses PlannedCourse[]
+
+  @@unique([userId, name])
+  @@index([userId, updatedAt])
+  @@index([programId])
+}
+
+model PlannedCourse {
+  id       String  @id @default(uuid()) @db.Uuid
+  planId   String  @db.Uuid
+  courseId String  @db.Uuid
+  termId   String? @db.Uuid
+  sequence Int     @default(0)
+  notes    String?
+
+  plan   DegreePlan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  course Course        @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  term   AcademicTerm? @relation(fields: [termId], references: [id], onDelete: SetNull)
+
+  @@unique([planId, courseId])
+  @@index([planId, termId])
+  @@index([courseId])
+}
+
+model CompletedCourse {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @db.Uuid
+  courseId      String    @db.Uuid
+  termId        String?   @db.Uuid
+  grade         String?
+  creditsEarned Float?
+  completedOn   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course        @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  term   AcademicTerm? @relation(fields: [termId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, courseId])
+  @@index([userId, completedOn])
+  @@index([courseId])
+}
+
+model TransferCourse {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @db.Uuid
+  courseId       String    @db.Uuid
+  grade          String?
+  transferSource String?
+  creditsEarned  Float?
+  completedOn    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, courseId])
+  @@index([userId, completedOn])
+  @@index([courseId])
 }
 
 // A course may appear in multiple requirement groups and may satisfy a group
@@ -200,6 +289,9 @@ model Course {
   prerequisiteFor    CoursePrerequisite[] @relation("PrerequisiteFor")
   prerequisites      CoursePrerequisite[] @relation("CoursePrerequisites")
   offerings          CourseOffering[]
+  plannedCourses     PlannedCourse[]
+  completedCourses   CompletedCourse[]
+  transferCourses    TransferCourse[]
 
   @@unique([universityId, code])
   @@index([universityId, title])
@@ -225,14 +317,17 @@ model CoursePrerequisite {
 }
 
 model AcademicTerm {
-  id           String           @id @default(uuid()) @db.Uuid
-  universityId String           @db.Uuid
-  name         String
-  code         String
-  startsOn     DateTime
-  endsOn       DateTime
-  university   University       @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  offerings    CourseOffering[]
+  id                 String            @id @default(uuid()) @db.Uuid
+  universityId       String            @db.Uuid
+  name               String
+  code               String
+  startsOn           DateTime
+  endsOn             DateTime
+  university         University        @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  offerings          CourseOffering[]
+  plannedCourses     PlannedCourse[]
+  completedCourses   CompletedCourse[]
+  graduatingStudents User[]
 
   @@unique([universityId, code])
   @@index([universityId, startsOn])

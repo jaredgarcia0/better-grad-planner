@@ -9,12 +9,14 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
 
   const session = await prisma.session.findUnique({
     where: { tokenHash: hashToken(token) },
+    include: { user: true },
   });
 
-  if (!session || session.revokedAt || session.expiresAt <= new Date()) {
+  if (!session || !session.user || session.revokedAt || session.expiresAt <= new Date()) {
     throw new HttpError(401, "Your session has expired. Please log in again.");
   }
 
   req.userId = session.userId;
+  req.user = session.user;
   next();
 });
