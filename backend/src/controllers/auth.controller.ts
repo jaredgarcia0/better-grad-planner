@@ -268,6 +268,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
 export const currentUser = asyncHandler(async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.userId },
+    select: { id: true, email: true, emailVerifiedAt: true },
   });
   if (!user) throw new HttpError(401, "Authentication is required.");
   res.json({ data: publicUser(user) });

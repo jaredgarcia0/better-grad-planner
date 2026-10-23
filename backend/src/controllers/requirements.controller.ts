@@ -26,6 +26,22 @@ export const listRequirements = asyncHandler(async (req, res) => {
       ...(req.query.operator ? { operator: req.query.operator } : {}),
     },
     { sequence: "asc" },
+    {
+      select: {
+        id: true,
+        programId: true,
+        parentId: true,
+        name: true,
+        description: true,
+        requirementType: true,
+        operator: true,
+        sequence: true,
+        minCourses: true,
+        maxCourses: true,
+        minCredits: true,
+        maxCredits: true,
+      },
+    },
   );
 });
 export const getRequirement = asyncHandler(async (req, res) =>
@@ -48,5 +64,16 @@ export const listRequirementCourses = asyncHandler(async (req, res) => {
     prisma.requirementCourse,
     { requirementId: idFrom(req) },
     { sequence: "asc" },
+    {
+      select: {
+        id: true,
+        requirementId: true,
+        courseId: true,
+        sequence: true,
+        minGrade: true,
+        creditsOverride: true,
+        course: { select: { id: true, code: true, title: true, credits: true } },
+      },
+    },
   );
 });

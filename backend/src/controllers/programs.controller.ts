@@ -13,21 +13,38 @@ import {
 export const listPrograms = asyncHandler(async (req, res) => {
   const search = queryValue(req, "q");
   const universityId = queryValue(req, "universityId");
-  await listResource(req, res, prisma.degreeProgram, {
-    ...(universityId ? { universityId } : {}),
-    ...(req.query.degreeType ? { degreeType: req.query.degreeType } : {}),
-    ...(req.query.catalogYear !== undefined
-      ? { catalogYear: Number(req.query.catalogYear) }
-      : {}),
-    ...(search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { code: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : {}),
-  });
+  await listResource(
+    req,
+    res,
+    prisma.degreeProgram,
+    {
+      ...(universityId ? { universityId } : {}),
+      ...(req.query.degreeType ? { degreeType: req.query.degreeType } : {}),
+      ...(req.query.catalogYear !== undefined
+        ? { catalogYear: Number(req.query.catalogYear) }
+        : {}),
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { code: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    { name: "asc" },
+    {
+      select: {
+        id: true,
+        universityId: true,
+        code: true,
+        name: true,
+        degreeType: true,
+        catalogYear: true,
+        totalCredits: true,
+      },
+    },
+  );
 });
 export const getProgram = asyncHandler(async (req, res) =>
   getResource(req, res, prisma.degreeProgram),
@@ -53,5 +70,33 @@ export const listProgramRequirements = asyncHandler(async (req, res) => {
       ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
     },
     { sequence: "asc" },
+    {
+      select: {
+        id: true,
+        programId: true,
+        parentId: true,
+        name: true,
+        description: true,
+        requirementType: true,
+        operator: true,
+        sequence: true,
+        minCourses: true,
+        maxCourses: true,
+        minCredits: true,
+        maxCredits: true,
+        courses: {
+          orderBy: { sequence: "asc" },
+          select: {
+            id: true,
+            requirementId: true,
+            courseId: true,
+            sequence: true,
+            minGrade: true,
+            creditsOverride: true,
+            course: { select: { id: true, code: true, title: true, credits: true } },
+          },
+        },
+      },
+    },
   );
 });

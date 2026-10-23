@@ -22,6 +22,17 @@ export const listPrerequisites = asyncHandler(async (req, res) => {
       ...(req.query.type ? { type: req.query.type } : {}),
     },
     { groupNumber: "asc" },
+    {
+      select: {
+        id: true,
+        courseId: true,
+        prerequisiteCourseId: true,
+        type: true,
+        groupNumber: true,
+        isAlternative: true,
+        minimumGrade: true,
+      },
+    },
   );
 });
 export const getPrerequisite = asyncHandler(async (req, res) =>

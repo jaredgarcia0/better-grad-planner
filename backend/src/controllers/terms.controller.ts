@@ -29,6 +29,16 @@ export const listTerms = asyncHandler(async (req, res) => {
         : {}),
     },
     { startsOn: "asc" },
+    {
+      select: {
+        id: true,
+        universityId: true,
+        name: true,
+        code: true,
+        startsOn: true,
+        endsOn: true,
+      },
+    },
   );
 });
 export const getTerm = asyncHandler(async (req, res) =>
@@ -50,5 +60,17 @@ export const listTermOfferings = asyncHandler(async (req, res) =>
     prisma.courseOffering,
     { termId: idFrom(req) },
     { courseId: "asc" },
+    {
+      select: {
+        id: true,
+        courseId: true,
+        termId: true,
+        sectionCode: true,
+        instructor: true,
+        meetingInfo: true,
+        capacity: true,
+        seatsOpen: true,
+      },
+    },
   ),
 );

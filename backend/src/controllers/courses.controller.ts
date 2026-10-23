@@ -33,6 +33,19 @@ export const listCourses = asyncHandler(async (req, res) => {
         : {}),
     },
     { code: "asc" },
+    {
+      select: {
+        id: true,
+        universityId: true,
+        departmentId: true,
+        code: true,
+        title: true,
+        credits: true,
+        level: true,
+        active: true,
+        department: { select: { code: true, name: true } },
+      },
+    },
   );
 });
 export const getCourse = asyncHandler(async (req, res) =>
@@ -54,6 +67,17 @@ export const listCoursePrerequisites = asyncHandler(async (req, res) =>
     prisma.coursePrerequisite,
     { courseId: idFrom(req) },
     { groupNumber: "asc" },
+    {
+      select: {
+        id: true,
+        courseId: true,
+        prerequisiteCourseId: true,
+        type: true,
+        groupNumber: true,
+        isAlternative: true,
+        minimumGrade: true,
+      },
+    },
   ),
 );
 export const listCourseOfferings = asyncHandler(async (req, res) =>
@@ -63,5 +87,17 @@ export const listCourseOfferings = asyncHandler(async (req, res) =>
     prisma.courseOffering,
     { courseId: idFrom(req) },
     { termId: "asc" },
+    {
+      select: {
+        id: true,
+        courseId: true,
+        termId: true,
+        sectionCode: true,
+        instructor: true,
+        meetingInfo: true,
+        capacity: true,
+        seatsOpen: true,
+      },
+    },
   ),
 );
