@@ -9,7 +9,14 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
 
   const session = await prisma.session.findUnique({
     where: { tokenHash: hashToken(token) },
-    include: { user: true },
+    select: {
+      userId: true,
+      expiresAt: true,
+      revokedAt: true,
+      user: {
+        select: { id: true, email: true, emailVerifiedAt: true },
+      },
+    },
   });
 
   if (!session || !session.user || session.revokedAt || session.expiresAt <= new Date()) {

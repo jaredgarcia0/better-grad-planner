@@ -21,6 +21,18 @@ export const listOfferings = asyncHandler(async (req, res) => {
       ...(termId ? { termId } : {}),
     },
     { termId: "asc" },
+    {
+      select: {
+        id: true,
+        courseId: true,
+        termId: true,
+        sectionCode: true,
+        instructor: true,
+        meetingInfo: true,
+        capacity: true,
+        seatsOpen: true,
+      },
+    },
   );
 });
 export const getOffering = asyncHandler(async (req, res) =>

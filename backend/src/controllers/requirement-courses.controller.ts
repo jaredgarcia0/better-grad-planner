@@ -21,6 +21,17 @@ export const listRequirementCourseLinks = asyncHandler(async (req, res) => {
       ...(courseId ? { courseId } : {}),
     },
     { sequence: "asc" },
+    {
+      select: {
+        id: true,
+        requirementId: true,
+        courseId: true,
+        sequence: true,
+        minGrade: true,
+        creditsOverride: true,
+        course: { select: { id: true, code: true, title: true, credits: true } },
+      },
+    },
   );
 });
 export const getRequirementCourseLink = asyncHandler(async (req, res) =>

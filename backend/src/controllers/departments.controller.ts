@@ -12,17 +12,24 @@ import {
 export const listDepartments = asyncHandler(async (req, res) => {
   const search = queryValue(req, "q");
   const universityId = queryValue(req, "universityId");
-  await listResource(req, res, prisma.department, {
-    ...(universityId ? { universityId } : {}),
-    ...(search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { code: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : {}),
-  });
+  await listResource(
+    req,
+    res,
+    prisma.department,
+    {
+      ...(universityId ? { universityId } : {}),
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { code: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    { name: "asc" },
+    { select: { id: true, universityId: true, code: true, name: true } },
+  );
 });
 export const getDepartment = asyncHandler(async (req, res) =>
   getResource(req, res, prisma.department),

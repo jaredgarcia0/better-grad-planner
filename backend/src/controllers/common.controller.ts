@@ -13,6 +13,11 @@ export type Model = {
 
 type Page = { page: number; pageSize: number; skip: number; take: number };
 
+type ListOptions = {
+  select?: Record<string, unknown>;
+  include?: Record<string, unknown>;
+};
+
 export function idFrom(req: Request): string {
   return req.params.id as string;
 }
@@ -31,10 +36,19 @@ export async function listResource(
   model: Model,
   where: Record<string, unknown> = {},
   orderBy: Record<string, string> = { name: "asc" },
+  options: ListOptions = {},
 ) {
   const page = pageFrom(req);
+  const query = {
+    where,
+    orderBy,
+    skip: page.skip,
+    take: page.take,
+    ...(options.select ? { select: options.select } : {}),
+    ...(options.include ? { include: options.include } : {}),
+  };
   const [data, total] = await Promise.all([
-    model.findMany({ where, orderBy, skip: page.skip, take: page.take }),
+    model.findMany(query),
     model.count({ where }),
   ]);
   res.json(response(data, page, total));
