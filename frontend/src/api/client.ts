@@ -123,9 +123,15 @@ export function listUniversities() {
   return apiRequest<ApiList<University>>("/api/universities?pageSize=5");
 }
 
-export function listPrograms(query = "") {
-  const params = new URLSearchParams({ pageSize: "5" });
+export function listPrograms(
+  query = "",
+  options: { degreeType?: Program["degreeType"]; pageSize?: number } = {},
+) {
+  const params = new URLSearchParams({
+    pageSize: String(options.pageSize ?? 5),
+  });
   if (query.trim()) params.set("q", query.trim());
+  if (options.degreeType) params.set("degreeType", options.degreeType);
   return apiRequest<ApiList<Program>>(`/api/programs?${params}`);
 }
 
