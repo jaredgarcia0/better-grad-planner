@@ -33,6 +33,15 @@ export type RequirementCourseLink = {
   courseId: string;
   creditsOverride?: number | null;
 };
+export type CoursePrerequisite = {
+  id: string;
+  courseId: string;
+  prerequisiteCourseId: string;
+  type: "PREREQUISITE" | "COREQUISITE";
+  groupNumber: number;
+  isAlternative: boolean;
+  minimumGrade?: string | null;
+};
 export type ApiList<T> = { data: T[]; pagination: Pagination };
 export type User = {
   id: string;
@@ -143,4 +152,10 @@ export function listRequirementCourses(requirementId: string) {
 
 export function getCourse(courseId: string) {
   return apiRequest<{ data: Course }>(`/api/courses/${courseId}`);
+}
+
+export function listCoursePrerequisites(courseId: string) {
+  return apiRequest<ApiList<CoursePrerequisite>>(
+    `/api/courses/${courseId}/prerequisites?pageSize=100`,
+  );
 }

@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type DragEvent } from "react";
 import { Course, listCourses } from "../api/client";
 
 type CourseSearchProps = {
   plannedCourseIds: Set<string>;
   onAdd: (course: Course) => void;
 };
+
+function startCourseDrag(
+  event: DragEvent<HTMLElement>,
+  course: Course,
+): void {
+  event.dataTransfer.effectAllowed = "copy";
+  event.dataTransfer.setData("application/bgp-course", JSON.stringify(course));
+}
 
 export function CourseSearch({ plannedCourseIds, onAdd }: CourseSearchProps) {
   const [query, setQuery] = useState("");
@@ -60,7 +68,12 @@ export function CourseSearch({ plannedCourseIds, onAdd }: CourseSearchProps) {
       {!loading && !error && (
         <div className="course-list">
           {courses.map((course) => (
-            <article className="course-row" key={course.id}>
+            <article
+              className="course-row"
+              key={course.id}
+              draggable={!plannedCourseIds.has(course.id)}
+              onDragStart={(event) => startCourseDrag(event, course)}
+            >
               <div>
                 <strong>{course.code}</strong>
                 <p>{course.title}</p>
