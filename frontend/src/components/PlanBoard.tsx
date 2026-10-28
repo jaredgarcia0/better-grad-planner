@@ -1,63 +1,38 @@
 import { useState } from "react";
 import { Course } from "../api/client";
+import { buildAcademicYears, getAcademicYearId, listPlanTerms } from "../plannerTerms";
 
 export type PlannedCourse = Course & { termId: string };
 type PlanBoardProps = {
   courses: PlannedCourse[];
   onRemove: (courseId: string) => void;
+  onMove: (courseId: string, termId: string) => void;
+  initialTerm: string;
 };
-type Term = { id: string; label: string; date: string };
-type AcademicYear = { id: string; label: string; terms: Term[] };
 
-const years: AcademicYear[] = [
+const years = [
   {
     id: "transfer",
-    label: "0 · Transfer credits",
+    label: "Transfer credits",
     terms: [
       { id: "transfer", label: "Transfer credits", date: "Before enrollment" },
     ],
   },
-  {
-    id: "2026-2027",
-    label: "2026–2027",
-    terms: [
-      { id: "fall-2026", label: "Fall 2026", date: "Sep – Dec" },
-      { id: "winter-2027", label: "Winter 2027", date: "Jan – Apr" },
-      { id: "spring-2027", label: "Spring 2027", date: "May – Aug" },
-    ],
-  },
-  {
-    id: "2027-2028",
-    label: "2027–2028",
-    terms: [
-      { id: "fall-2027", label: "Fall 2027", date: "Sep – Dec" },
-      { id: "winter-2028", label: "Winter 2028", date: "Jan – Apr" },
-      { id: "spring-2028", label: "Spring 2028", date: "May – Aug" },
-    ],
-  },
-  {
-    id: "2028-2029",
-    label: "2028–2029",
-    terms: [
-      { id: "fall-2028", label: "Fall 2028", date: "Sep – Dec" },
-      { id: "winter-2029", label: "Winter 2029", date: "Jan – Apr" },
-      { id: "spring-2029", label: "Spring 2029", date: "May – Aug" },
-    ],
-  },
-  {
-    id: "2029-2030",
-    label: "2029–2030",
-    terms: [
-      { id: "fall-2029", label: "Fall 2029", date: "Sep – Dec" },
-      { id: "winter-2030", label: "Winter 2030", date: "Jan – Apr" },
-      { id: "spring-2030", label: "Spring 2030", date: "May – Aug" },
-    ],
-  },
+  ...buildAcademicYears(),
+];
+const selectableTerms = [
+  { id: "transfer", label: "Transfer credits" },
+  ...listPlanTerms(),
 ];
 
-export function PlanBoard({ courses, onRemove }: PlanBoardProps) {
+export function PlanBoard({
+  courses,
+  onRemove,
+  onMove,
+  initialTerm,
+}: PlanBoardProps) {
   const [expandedYears, setExpandedYears] = useState<Record<string, boolean>>(
-    {},
+    () => ({ [getAcademicYearId(initialTerm)]: true }),
   );
   const totalCredits = courses.reduce(
     (total, course) => total + course.credits,
@@ -73,7 +48,7 @@ export function PlanBoard({ courses, onRemove }: PlanBoardProps) {
           <p className="eyebrow">Your roadmap</p>
           <h2>Build your plan</h2>
           <p className="muted">
-            Add courses from the catalog to map out your upcoming semesters.
+            Add courses from the catalog, then choose the semester for each one.
           </p>
         </div>
         <div className="plan-total">
@@ -88,7 +63,7 @@ export function PlanBoard({ courses, onRemove }: PlanBoardProps) {
               className="year-toggle"
               type="button"
               onClick={() => toggleYear(year.id)}
-              aria-expanded={expandedYears[year.id]}
+              aria-expanded={Boolean(expandedYears[year.id])}
             >
               <span>
                 <strong>{year.label}</strong>
@@ -99,11 +74,11 @@ export function PlanBoard({ courses, onRemove }: PlanBoardProps) {
                       courses.filter((course) => course.termId === term.id)
                         .length,
                     0,
-                  )}{" "}
+                  )} {" "}
                   courses planned
                 </small>
               </span>
-              <b>{expandedYears[year.id] ? "⌃" : "⌄"}</b>
+              <b aria-hidden="true">{expandedYears[year.id] ? "⌃" : "⌄"}</b>
             </button>
             {expandedYears[year.id] && (
               <div className="term-grid">
@@ -127,10 +102,24 @@ export function PlanBoard({ courses, onRemove }: PlanBoardProps) {
                       <div className="term-courses">
                         {termCourses.map((course) => (
                           <div className="planned-course" key={course.id}>
-                            <div>
+                            <div className="planned-course-info">
                               <strong>{course.code}</strong>
                               <span>{course.title}</span>
                             </div>
+                            <select
+                              className="planned-course-term"
+                              aria-label={`Move ${course.code} to another semester`}
+                              value={course.termId}
+                              onChange={(event) =>
+                                onMove(course.id, event.target.value)
+                              }
+                            >
+                              {selectableTerms.map((option) => (
+                                <option value={option.id} key={option.id}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
                             <button
                               type="button"
                               onClick={() => onRemove(course.id)}

@@ -1092,3 +1092,666 @@ footer {
     display: none;
   }
 }
+
+/* Graduation plan selection and setup */
+.header-plans-link {
+  margin-left: auto;
+  margin-right: 25px;
+  border: 0;
+  background: transparent;
+  color: #167d9a;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+.plan-library {
+  padding: 20px 0 18px;
+}
+.plan-library-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 0 30px;
+}
+.plan-library-heading h1,
+.plan-setup-intro h1,
+.plan-overview h1 {
+  margin-bottom: 12px;
+}
+.plan-library-heading .student-copy {
+  max-width: 550px;
+  line-height: 1.6;
+}
+.create-plan-button {
+  flex: none;
+}
+.plan-empty-state {
+  min-height: 390px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  padding: 42px;
+  background: #fff;
+  border: 1px solid #e5edf1;
+  border-radius: 20px;
+}
+.plan-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 23px;
+  border-radius: 18px;
+  background: #eaf5f5;
+  color: #167d9a;
+  font-size: 30px;
+}
+.plan-empty-state .eyebrow {
+  margin-bottom: 10px;
+}
+.plan-empty-state h2 {
+  margin-bottom: 9px;
+}
+.plan-empty-state .muted {
+  max-width: 440px;
+  margin-bottom: 23px;
+}
+.plan-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.graduation-plan-card {
+  min-width: 0;
+  padding: 22px 23px 17px;
+  background: #fff;
+  border: 1px solid #e5edf1;
+  border-radius: 16px;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.graduation-plan-card:hover {
+  border-color: #bddfe1;
+  box-shadow: 0 8px 24px rgba(16, 42, 67, 0.06);
+}
+.plan-card-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.plan-card-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: #eaf5f5;
+  color: #167d9a;
+  font: 600 20px Fraunces, serif;
+}
+.plan-card-menu {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #829ab1;
+  font-size: 22px;
+}
+.plan-card-menu:hover {
+  background: #f1f7f8;
+  color: #167d9a;
+}
+.graduation-plan-card h2 {
+  margin: 0 0 5px;
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+.plan-card-major {
+  margin: 0 0 19px;
+  color: #176078;
+  font-size: 13px;
+  font-weight: 700;
+}
+.plan-card-details {
+  display: grid;
+  gap: 11px;
+  padding: 15px 0;
+  border-top: 1px solid #edf2f5;
+  border-bottom: 1px solid #edf2f5;
+}
+.plan-card-details span {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: #627d98;
+  font-size: 12px;
+  text-align: right;
+}
+.plan-card-details b {
+  color: #829ab1;
+  font-weight: 500;
+  text-align: left;
+}
+.plan-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 15px;
+}
+.plan-card-footer > span {
+  color: #829ab1;
+  font-size: 11px;
+}
+.plan-card-footer .text-button span {
+  margin-left: 5px;
+}
+.plan-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.plan-delete-button {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #f0d4d1;
+  border-radius: 8px;
+  background: #fff;
+  color: #b5473d;
+  font-size: 12px;
+  font-weight: 600;
+}
+.plan-delete-button:hover {
+  border-color: #b5473d;
+  background: #fbeeec;
+}
+.plan-setup-page {
+  padding: 6px 0 24px;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: #167d9a;
+  font-size: 13px;
+  font-weight: 700;
+}
+.back-link span {
+  font-size: 18px;
+}
+.plan-setup-layout {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.78fr) minmax(0, 1.22fr);
+  align-items: start;
+  gap: 44px;
+}
+.plan-setup-intro {
+  position: sticky;
+  top: 30px;
+  padding: 20px 0;
+}
+.plan-setup-intro h1 {
+  font-size: 46px;
+}
+.plan-setup-intro .student-copy {
+  max-width: 365px;
+  line-height: 1.65;
+}
+.setup-aside-note {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  max-width: 360px;
+  margin-top: 42px;
+  padding: 17px;
+  border: 1px solid #d4eded;
+  border-radius: 13px;
+  background: #eaf5f5;
+}
+.setup-aside-note p {
+  margin: 0;
+  color: #176078;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.setup-aside-mark {
+  color: #c6851d;
+  font-size: 18px;
+}
+.plan-setup-form {
+  display: grid;
+  gap: 21px;
+  padding: 28px;
+  background: #fff;
+  border: 1px solid #e5edf1;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(16, 42, 67, 0.04);
+}
+.setup-form-heading {
+  display: flex;
+  align-items: start;
+  gap: 13px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #edf2f5;
+}
+.setup-form-heading > span {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  flex: none;
+  border-radius: 9px;
+  background: #eaf5f5;
+  color: #167d9a;
+  font-size: 11px;
+  font-weight: 700;
+}
+.setup-form-heading h2 {
+  margin: 1px 0 4px;
+  font: 600 19px Fraunces, serif;
+}
+.setup-form-heading h2 small {
+  color: #829ab1;
+  font: 500 11px "DM Sans", sans-serif;
+}
+.setup-form-heading p {
+  margin: 0;
+  color: #829ab1;
+  font-size: 11px;
+}
+.setup-field {
+  display: grid;
+  gap: 8px;
+  color: #176078;
+  font-size: 12px;
+  font-weight: 700;
+}
+.setup-field > span {
+  color: #9aafbf;
+  font-size: 10px;
+  font-weight: 400;
+}
+.setup-field input,
+.setup-field select,
+.program-search-wrap input {
+  width: 100%;
+  min-height: 43px;
+  padding: 10px 12px;
+  border: 1px solid #d9e4ea;
+  border-radius: 9px;
+  background: #fff;
+  color: #102a43;
+  font: 400 13px "DM Sans", sans-serif;
+}
+.setup-field input:focus,
+.setup-field select:focus,
+.program-search-wrap input:focus,
+.planned-course-term:focus {
+  outline: 2px solid #bddfe1;
+  border-color: #167d9a;
+}
+.program-picker {
+  min-width: 0;
+}
+.program-picker-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.program-picker-label label {
+  color: #176078;
+  font-size: 12px;
+  font-weight: 700;
+}
+.program-picker-label > span {
+  color: #9aafbf;
+  font-size: 10px;
+}
+.program-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.program-search-wrap input {
+  padding-left: 37px;
+}
+.program-search-icon {
+  position: absolute;
+  left: 13px;
+  z-index: 1;
+  color: #829ab1;
+  font-size: 18px;
+  pointer-events: none;
+}
+.program-search-wrap .picker-cancel {
+  position: absolute;
+  right: 8px;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: #167d9a;
+  font-size: 11px;
+  font-weight: 700;
+}
+.program-results {
+  max-height: 220px;
+  margin-top: 6px;
+  overflow-y: auto;
+  border: 1px solid #e5edf1;
+  border-radius: 10px;
+  background: #fff;
+}
+.program-results > .muted,
+.program-results > .error-message {
+  margin: 0;
+  padding: 12px;
+  font-size: 11px;
+}
+.program-result {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 0;
+  border-bottom: 1px solid #edf2f5;
+  background: #fff;
+  color: #102a43;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+}
+.program-result:last-child {
+  border-bottom: 0;
+}
+.program-result:hover,
+.program-result[aria-selected="true"] {
+  background: #f1f8f8;
+}
+.program-result b {
+  color: #167d9a;
+}
+.selected-program {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid #bddfe1;
+  border-radius: 10px;
+  background: #f5fbfb;
+}
+.selected-program > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.selected-program strong {
+  overflow: hidden;
+  color: #102a43;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.selected-program span {
+  color: #829ab1;
+  font-size: 10px;
+}
+.minor-picker-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 12px;
+}
+.remove-minor-button {
+  margin-bottom: 14px;
+  border: 0;
+  background: transparent;
+  color: #829ab1;
+  font-size: 10px;
+}
+.add-minor-button {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #167d9a;
+  font-size: 12px;
+  font-weight: 700;
+}
+.add-minor-button > span {
+  margin-right: 4px;
+  font-size: 17px;
+  vertical-align: -1px;
+}
+.add-minor-button small {
+  margin-left: 7px;
+  color: #9aafbf;
+  font-size: 10px;
+  font-weight: 400;
+}
+.semester-fields {
+  display: grid;
+  gap: 17px;
+  margin-top: 2px;
+}
+.semester-heading {
+  margin-bottom: -1px;
+}
+.semester-select-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+.setup-error {
+  margin: 0;
+}
+.setup-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 17px;
+  border-top: 1px solid #edf2f5;
+}
+.setup-form-actions .secondary-button {
+  margin: 0;
+  background: #fff;
+}
+.setup-form-actions .primary-button span {
+  margin-left: 11px;
+}
+.plan-overview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 28px;
+  padding: 34px 40px;
+  border: 1px solid #e5edf1;
+  border-radius: 18px;
+  background: #fff;
+}
+.plan-overview h1 {
+  overflow-wrap: anywhere;
+}
+.plan-overview-copy .student-copy {
+  margin-bottom: 16px;
+}
+.plan-overview-copy .student-copy strong {
+  color: #176078;
+}
+.plan-overview-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.plan-overview-tags span {
+  padding: 7px 10px;
+  border-radius: 99px;
+  background: #f0f8f8;
+  color: #176078;
+  font-size: 10px;
+  font-weight: 600;
+}
+.edit-plan-button {
+  flex: none;
+  margin: 0;
+}
+.planned-course {
+  align-items: center;
+  gap: 6px;
+}
+.planned-course-info {
+  flex: 1;
+  min-width: 0;
+}
+.planned-course-term {
+  max-width: 105px;
+  padding: 5px 4px;
+  border: 1px solid #d9e9e9;
+  border-radius: 6px;
+  background: #fff;
+  color: #176078;
+  font: 500 9px "DM Sans", sans-serif;
+}
+.program-requirements + .program-requirements {
+  margin-top: 23px;
+}
+.program-requirements-heading {
+  display: grid;
+  gap: 5px;
+  margin: 20px 0 7px;
+}
+.program-requirements-heading span {
+  color: #167d9a;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.program-requirements-heading strong {
+  font-size: 12px;
+}
+.requirement-more {
+  margin: 3px 0 4px 16px;
+  color: #829ab1;
+  font-size: 10px;
+}
+
+@media (max-width: 900px) {
+  .plan-setup-layout {
+    grid-template-columns: minmax(210px, 0.7fr) minmax(0, 1.3fr);
+    gap: 25px;
+  }
+  .plan-setup-intro h1 {
+    font-size: 39px;
+  }
+  .plan-setup-form {
+    padding: 22px;
+  }
+}
+@media (max-width: 720px) {
+  .plan-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .plan-setup-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .plan-setup-intro {
+    position: static;
+    padding: 0 0 10px;
+  }
+  .plan-setup-intro h1 {
+    font-size: 38px;
+  }
+  .setup-aside-note {
+    display: none;
+  }
+  .plan-overview {
+    align-items: start;
+    padding: 28px;
+  }
+  .plan-overview h1 {
+    font-size: 42px;
+  }
+  .term-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .plan-library-heading {
+    display: grid;
+    align-items: start;
+    gap: 16px;
+  }
+  .plan-library-heading h1 {
+    font-size: 39px;
+  }
+  .create-plan-button {
+    justify-self: start;
+  }
+  .plan-empty-state {
+    min-height: 340px;
+    padding: 28px 21px;
+  }
+  .plan-empty-state h2 {
+    font-size: 23px;
+  }
+  .plan-setup-form {
+    gap: 18px;
+    padding: 19px 16px;
+  }
+  .semester-select-grid {
+    grid-template-columns: 1fr;
+  }
+  .minor-picker-row {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .remove-minor-button {
+    justify-self: start;
+    margin: 0;
+  }
+  .setup-form-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .setup-form-actions button {
+    width: 100%;
+  }
+  .plan-overview {
+    display: grid;
+    gap: 18px;
+    padding: 24px 20px;
+  }
+  .plan-overview h1 {
+    font-size: 36px;
+  }
+  .edit-plan-button {
+    justify-self: start;
+  }
+  .header-plans-link {
+    margin-right: 10px;
+    font-size: 11px;
+  }
+  .planned-course {
+    flex-wrap: wrap;
+  }
+  .planned-course-info {
+    width: calc(100% - 28px);
+  }
+  .planned-course-term {
+    max-width: calc(100% - 27px);
+    margin-right: auto;
+  }
+}
