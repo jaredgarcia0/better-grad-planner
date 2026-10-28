@@ -11,15 +11,11 @@ type PlanBoardProps = {
   courses: PlannedCourse[];
   onRemove: (courseId: string) => void;
   onMove: (courseId: string, termId: string) => void;
-  initialTerm: string;
+  startTerm: string;
+  endTerm: string;
   prerequisiteIssues: Record<string, string[]>;
   onShowPrerequisiteIssue: (course: PlannedCourse) => void;
 };
-
-const selectableTerms = [
-  { id: "transfer", label: "Transfer credits" },
-  ...listPlanTerms(),
-];
 
 function readDraggedCourse(event: DragEvent<HTMLElement>): Course | null {
   const payload = event.dataTransfer.getData("application/bgp-course");
@@ -35,12 +31,32 @@ export function PlanBoard({
   courses,
   onRemove,
   onMove,
-  initialTerm,
+  startTerm,
+  endTerm,
   prerequisiteIssues,
   onShowPrerequisiteIssue,
 }: PlanBoardProps) {
+  const allTerms = listPlanTerms();
+  const startIndex = startTerm
+    ? Math.max(allTerms.findIndex((term) => term.id === startTerm), 0)
+    : 0;
+  const endMatch = endTerm
+    ? allTerms.findIndex((term) => term.id === endTerm)
+    : allTerms.length - 1;
+  const endIndex = endMatch < startIndex ? startIndex : endMatch;
+  const availableTermIds = new Set(
+    allTerms.slice(startIndex, endIndex + 1).map((term) => term.id),
+  );
+  const availableYears = plannerYears
+    .map((year) => ({
+      ...year,
+      terms: year.terms.filter((term) => availableTermIds.has(term.id)),
+    }))
+    .filter((year) => year.terms.length > 0);
+  const selectableTerms = allTerms.slice(startIndex, endIndex + 1);
+  const firstAvailableTerm = selectableTerms[0]?.id ?? "fall-2026";
   const [expandedYears, setExpandedYears] = useState<Record<string, boolean>>(
-    () => ({ [getAcademicYearId(initialTerm)]: true }),
+    () => ({ [getAcademicYearId(startTerm || firstAvailableTerm)]: true }),
   );
   const totalCredits = courses.reduce(
     (total, course) => total + course.credits,
@@ -66,7 +82,7 @@ export function PlanBoard({
         </div>
       </div>
       <div className="year-list">
-        {plannerYears.map((year) => (
+        {availableYears.map((year) => (
           <section className="year-section" key={year.id}>
             <button
               className="year-toggle"

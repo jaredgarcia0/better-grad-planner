@@ -17,7 +17,7 @@ import {
 import { PlanBoard, PlannedCourse } from "./components/PlanBoard";
 import { RequirementsPanel } from "./components/RequirementsPanel";
 import { SignIn } from "./components/SignIn";
-import { getTermLabel, plannerYears } from "./plannerTerms";
+import { getTermLabel, listPlanTerms, plannerYears } from "./plannerTerms";
 
 function savedPlansKey(workspaceId: string) {
   return `better-grad-planner:${workspaceId}:plans`;
@@ -243,6 +243,27 @@ export default function App() {
   const plannedCourseIds = new Set(
     activePlan?.courses.map((course) => course.id) ?? [],
   );
+  const planTerms = listPlanTerms();
+  const planStartIndex = activePlan?.startTerm
+    ? Math.max(
+        planTerms.findIndex((term) => term.id === activePlan.startTerm),
+        0,
+      )
+    : 0;
+  const planEndMatch = activePlan?.endTerm
+    ? planTerms.findIndex((term) => term.id === activePlan.endTerm)
+    : planTerms.length - 1;
+  const planEndIndex =
+    planEndMatch < planStartIndex ? planStartIndex : planEndMatch;
+  const availablePlanTermIds = new Set(
+    planTerms.slice(planStartIndex, planEndIndex + 1).map((term) => term.id),
+  );
+  const availablePlanYears = plannerYears
+    .map((year) => ({
+      ...year,
+      terms: year.terms.filter((term) => availablePlanTermIds.has(term.id)),
+    }))
+    .filter((year) => year.terms.length > 0);
 
   function handleSavePlan(plan: GraduationPlan) {
     setPlans((current) => {
@@ -422,7 +443,8 @@ export default function App() {
               courses={activePlan.courses}
               onRemove={removeCourse}
               onMove={moveCourse}
-              initialTerm={activePlan.startTerm || "fall-2026"}
+              startTerm={activePlan.startTerm}
+              endTerm={activePlan.endTerm}
               prerequisiteIssues={prerequisiteIssues}
               onShowPrerequisiteIssue={setIssueCourse}
             />
@@ -487,7 +509,7 @@ export default function App() {
               value={selectedTermId}
               onChange={(event) => setSelectedTermId(event.target.value)}
             >
-              {plannerYears.map((year) => (
+              {availablePlanYears.map((year) => (
                 <optgroup label={year.label} key={year.id}>
                   {year.terms.map((term) => (
                     <option value={term.id} key={term.id}>

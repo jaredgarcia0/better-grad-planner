@@ -3,7 +3,7 @@ export type AcademicYear = { id: string; label: string; terms: PlanTerm[] };
 
 export function buildAcademicYears(
   firstYear = 2026,
-  lastYear = 2029,
+  lastYear = 2041,
 ): AcademicYear[] {
   return Array.from({ length: lastYear - firstYear + 1 }, (_, index) => {
     const year = firstYear + index;
@@ -32,7 +32,7 @@ export function getCurrentTermId(today = new Date()) {
   return `${season}-${today.getFullYear()}`;
 }
 
-// Defaults a new plan to the current semester through the fourth calendar year.
+// Defaults a new plan to a 12-semester window beginning with the current term.
 export function getDefaultTermRange(today = new Date()) {
   const terms = listPlanTerms();
   const currentIndex = terms.findIndex(
