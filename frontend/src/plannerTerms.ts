@@ -19,6 +19,8 @@ export function buildAcademicYears(
   });
 }
 
+export const plannerYears = buildAcademicYears();
+
 export function listPlanTerms() {
   return buildAcademicYears().flatMap((year) => year.terms);
 }
