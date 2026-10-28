@@ -1275,7 +1275,9 @@ footer {
   background: #fff;
   border: 1px solid #e5edf1;
   border-radius: 16px;
-  transition: border-color 140ms ease, box-shadow 140ms ease;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
 }
 .graduation-plan-card:hover {
   border-color: #bddfe1;
@@ -1295,7 +1297,9 @@ footer {
   border-radius: 11px;
   background: #eaf5f5;
   color: #167d9a;
-  font: 600 20px Fraunces, serif;
+  font:
+    600 20px Fraunces,
+    serif;
 }
 .plan-card-menu {
   width: 32px;
@@ -1461,11 +1465,15 @@ footer {
 }
 .setup-form-heading h2 {
   margin: 1px 0 4px;
-  font: 600 19px Fraunces, serif;
+  font:
+    600 19px Fraunces,
+    serif;
 }
 .setup-form-heading h2 small {
   color: #829ab1;
-  font: 500 11px "DM Sans", sans-serif;
+  font:
+    500 11px "DM Sans",
+    sans-serif;
 }
 .setup-form-heading p {
   margin: 0;
@@ -1494,7 +1502,9 @@ footer {
   border-radius: 9px;
   background: #fff;
   color: #102a43;
-  font: 400 13px "DM Sans", sans-serif;
+  font:
+    400 13px "DM Sans",
+    sans-serif;
 }
 .setup-field input:focus,
 .setup-field select:focus,
@@ -1728,7 +1738,9 @@ footer {
   border-radius: 6px;
   background: #fff;
   color: #176078;
-  font: 500 9px "DM Sans", sans-serif;
+  font:
+    500 9px "DM Sans",
+    sans-serif;
 }
 .program-requirements + .program-requirements {
   margin-top: 23px;

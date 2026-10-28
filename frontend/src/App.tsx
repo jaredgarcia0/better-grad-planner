@@ -131,7 +131,8 @@ export default function App() {
 
           for (const prerequisite of prerequisites) {
             if (prerequisite.isAlternative) {
-              const group = alternativeGroups.get(prerequisite.groupNumber) ?? [];
+              const group =
+                alternativeGroups.get(prerequisite.groupNumber) ?? [];
               group.push(prerequisite);
               alternativeGroups.set(prerequisite.groupNumber, group);
               continue;
@@ -142,7 +143,10 @@ export default function App() {
             const scheduledOrder = scheduled
               ? termOrder.get(scheduled.termId)
               : undefined;
-            if (scheduledOrder === undefined || scheduledOrder >= currentOrder) {
+            if (
+              scheduledOrder === undefined ||
+              scheduledOrder >= currentOrder
+            ) {
               const location = scheduled
                 ? `scheduled for ${termLabels.get(scheduled.termId) ?? "another term"}`
                 : "not planned";
@@ -160,7 +164,9 @@ export default function App() {
               const scheduledOrder = scheduled
                 ? termOrder.get(scheduled.termId)
                 : undefined;
-              return scheduledOrder !== undefined && scheduledOrder < currentOrder;
+              return (
+                scheduledOrder !== undefined && scheduledOrder < currentOrder
+              );
             });
             if (!satisfied) {
               messages.push(
@@ -188,19 +194,31 @@ export default function App() {
       while (changed) {
         changed = false;
         for (const result of issues) {
-          const blockedPrerequisites = result.prerequisites.filter((prerequisite) => {
-            if (prerequisite.isAlternative) return false;
-            const scheduled = scheduledCourses.get(prerequisite.prerequisiteCourseId);
-            return Boolean(scheduled && issueMap.has(scheduled.id));
-          });
+          const blockedPrerequisites = result.prerequisites.filter(
+            (prerequisite) => {
+              if (prerequisite.isAlternative) return false;
+              const scheduled = scheduledCourses.get(
+                prerequisite.prerequisiteCourseId,
+              );
+              return Boolean(scheduled && issueMap.has(scheduled.id));
+            },
+          );
           if (blockedPrerequisites.length === 0) continue;
           const messages = issueMap.get(result.courseId) ?? [];
-          if (messages.some((message) => message.startsWith("Fix prerequisite issue:"))) {
+          if (
+            messages.some((message) =>
+              message.startsWith("Fix prerequisite issue:"),
+            )
+          ) {
             continue;
           }
           const blockingDetails = blockedPrerequisites.map((prerequisite) => {
-            const blockingCourse = scheduledCourses.get(prerequisite.prerequisiteCourseId);
-            const blockingIssues = issueMap.get(prerequisite.prerequisiteCourseId);
+            const blockingCourse = scheduledCourses.get(
+              prerequisite.prerequisiteCourseId,
+            );
+            const blockingIssues = issueMap.get(
+              prerequisite.prerequisiteCourseId,
+            );
             return `${blockingCourse?.code ?? prerequisite.prerequisiteCourseId}: ${blockingIssues?.[0] ?? "its prerequisite is not satisfied"}`;
           });
           issueMap.set(result.courseId, [
@@ -412,7 +430,11 @@ export default function App() {
                 <p className="student-copy">
                   <strong>{activePlan.major.name}</strong>
                   {activePlan.minor && (
-                    <> <span aria-hidden="true">·</span> Minor: {activePlan.minor.name}</>
+                    <>
+                      {" "}
+                      <span aria-hidden="true">·</span> Minor:{" "}
+                      {activePlan.minor.name}
+                    </>
                   )}
                 </p>
                 <div className="plan-overview-tags">
@@ -469,7 +491,9 @@ export default function App() {
               setSetupOpen(true);
             }}
             onDelete={(planId) => {
-              setPlans((current) => current.filter((plan) => plan.id !== planId));
+              setPlans((current) =>
+                current.filter((plan) => plan.id !== planId),
+              );
             }}
           />
         )}

@@ -29,7 +29,9 @@ function RequirementGroupView({ group }: { group: Group }) {
         </div>
       ))}
       {group.courses.length > 4 && (
-        <p className="requirement-more">+ {group.courses.length - 4} more courses</p>
+        <p className="requirement-more">
+          + {group.courses.length - 4} more courses
+        </p>
       )}
     </div>
   );
@@ -111,19 +113,25 @@ export function RequirementsPanel({ programs }: { programs: Program[] }) {
       {!loading && !error && programGroups.length === 0 && (
         <p className="muted">No requirements found for this program.</p>
       )}
-      {!loading && !error && programGroups.map(({ program, groups }) => (
-        <section className="program-requirements" key={program.id}>
-          <div className="program-requirements-heading">
-            <span>{program.degreeType === "MINOR" ? "MINOR" : "MAJOR"}</span>
-            <strong>{program.name}</strong>
-          </div>
-          {groups.length === 0 ? (
-            <p className="muted">No requirements are listed for this program yet.</p>
-          ) : (
-            groups.map((group) => <RequirementGroupView key={group.id} group={group} />)
-          )}
-        </section>
-      ))}
+      {!loading &&
+        !error &&
+        programGroups.map(({ program, groups }) => (
+          <section className="program-requirements" key={program.id}>
+            <div className="program-requirements-heading">
+              <span>{program.degreeType === "MINOR" ? "MINOR" : "MAJOR"}</span>
+              <strong>{program.name}</strong>
+            </div>
+            {groups.length === 0 ? (
+              <p className="muted">
+                No requirements are listed for this program yet.
+              </p>
+            ) : (
+              groups.map((group) => (
+                <RequirementGroupView key={group.id} group={group} />
+              ))
+            )}
+          </section>
+        ))}
     </aside>
   );
 }

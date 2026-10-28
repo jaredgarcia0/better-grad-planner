@@ -50,14 +50,20 @@ export function PlanLibrary({
             on.
           </p>
         </div>
-        <button className="primary-button create-plan-button" type="button" onClick={onCreate}>
+        <button
+          className="primary-button create-plan-button"
+          type="button"
+          onClick={onCreate}
+        >
           Create a plan <span aria-hidden="true">+</span>
         </button>
       </div>
 
       {plans.length === 0 ? (
         <div className="plan-empty-state">
-          <div className="plan-empty-icon" aria-hidden="true">↗</div>
+          <div className="plan-empty-icon" aria-hidden="true">
+            ↗
+          </div>
           <p className="eyebrow">A path that fits you</p>
           <h2>Start with a major</h2>
           <p className="muted">
@@ -79,7 +85,9 @@ export function PlanLibrary({
             return (
               <article className="graduation-plan-card" key={plan.id}>
                 <div className="plan-card-topline">
-                  <span className="plan-card-icon" aria-hidden="true">B</span>
+                  <span className="plan-card-icon" aria-hidden="true">
+                    B
+                  </span>
                   <div className="plan-card-actions">
                     <button
                       className="plan-card-menu"
@@ -94,7 +102,11 @@ export function PlanLibrary({
                       type="button"
                       aria-label={`Delete ${plan.name}`}
                       onClick={() => {
-                        if (window.confirm(`Delete “${plan.name}”? This removes its planned courses.`)) {
+                        if (
+                          window.confirm(
+                            `Delete “${plan.name}”? This removes its planned courses.`,
+                          )
+                        ) {
                           onDelete(plan.id);
                         }
                       }}
@@ -107,15 +119,29 @@ export function PlanLibrary({
                 <p className="plan-card-major">{plan.major.name}</p>
                 <div className="plan-card-details">
                   {plan.minor ? (
-                    <span><b>Minor</b>{plan.minor.name}</span>
+                    <span>
+                      <b>Minor</b>
+                      {plan.minor.name}
+                    </span>
                   ) : (
-                    <span><b>Minor</b>Not selected</span>
+                    <span>
+                      <b>Minor</b>Not selected
+                    </span>
                   )}
-                  <span><b>Schedule</b>{termRangeLabel(plan.startTerm, plan.endTerm)}</span>
+                  <span>
+                    <b>Schedule</b>
+                    {termRangeLabel(plan.startTerm, plan.endTerm)}
+                  </span>
                 </div>
                 <div className="plan-card-footer">
-                  <span>{plan.courses.length} courses · {plannedCredits} credits</span>
-                  <button className="text-button" type="button" onClick={() => onOpen(plan.id)}>
+                  <span>
+                    {plan.courses.length} courses · {plannedCredits} credits
+                  </span>
+                  <button
+                    className="text-button"
+                    type="button"
+                    onClick={() => onOpen(plan.id)}
+                  >
                     Open plan <span aria-hidden="true">→</span>
                   </button>
                 </div>
@@ -193,16 +219,24 @@ function ProgramPicker({
         <div className="selected-program">
           <div>
             <strong>{selected.name}</strong>
-            <span>{degreeType === "MINOR" ? "Minor program" : "Bachelor’s program"}</span>
+            <span>
+              {degreeType === "MINOR" ? "Minor program" : "Bachelor’s program"}
+            </span>
           </div>
-          <button className="text-button" type="button" onClick={clearSelection}>
+          <button
+            className="text-button"
+            type="button"
+            onClick={clearSelection}
+          >
             Change
           </button>
         </div>
       ) : (
         <>
           <div className="program-search-wrap">
-            <span className="program-search-icon" aria-hidden="true">⌕</span>
+            <span className="program-search-icon" aria-hidden="true">
+              ⌕
+            </span>
             <input
               id={`program-${degreeType}`}
               type="search"
@@ -218,37 +252,49 @@ function ProgramPicker({
               }}
             />
             {selected && (
-              <button className="picker-cancel" type="button" onClick={() => {
-                setQuery(selected.name);
-                setOpen(false);
-              }}>
+              <button
+                className="picker-cancel"
+                type="button"
+                onClick={() => {
+                  setQuery(selected.name);
+                  setOpen(false);
+                }}
+              >
                 Cancel
               </button>
             )}
           </div>
           {open && (
-            <div className="program-results" id={`program-results-${degreeType}`} role="listbox">
+            <div
+              className="program-results"
+              id={`program-results-${degreeType}`}
+              role="listbox"
+            >
               {loading && <p className="muted">Searching the catalog…</p>}
               {error && <p className="error-message">{error}</p>}
-              {!loading && !error && results.map((program) => (
-                <button
-                  className="program-result"
-                  type="button"
-                  role="option"
-                  aria-selected={selected?.id === program.id}
-                  key={program.id}
-                  onClick={() => {
-                    onChange(program);
-                    setQuery(program.name);
-                    setOpen(false);
-                  }}
-                >
-                  <span>{program.name}</span>
-                  <b aria-hidden="true">→</b>
-                </button>
-              ))}
+              {!loading &&
+                !error &&
+                results.map((program) => (
+                  <button
+                    className="program-result"
+                    type="button"
+                    role="option"
+                    aria-selected={selected?.id === program.id}
+                    key={program.id}
+                    onClick={() => {
+                      onChange(program);
+                      setQuery(program.name);
+                      setOpen(false);
+                    }}
+                  >
+                    <span>{program.name}</span>
+                    <b aria-hidden="true">→</b>
+                  </button>
+                ))}
               {!loading && !error && results.length === 0 && (
-                <p className="muted">No programs matched. Try a different search.</p>
+                <p className="muted">
+                  No programs matched. Try a different search.
+                </p>
               )}
             </div>
           )}
@@ -268,8 +314,12 @@ export function PlanSetup({
   onSave: (plan: GraduationPlan) => void;
 }) {
   const [name, setName] = useState(initialPlan?.name ?? "");
-  const [major, setMajor] = useState<Program | null>(initialPlan?.major ?? null);
-  const [minor, setMinor] = useState<Program | null>(initialPlan?.minor ?? null);
+  const [major, setMajor] = useState<Program | null>(
+    initialPlan?.major ?? null,
+  );
+  const [minor, setMinor] = useState<Program | null>(
+    initialPlan?.minor ?? null,
+  );
   const [minorVisible, setMinorVisible] = useState(Boolean(initialPlan?.minor));
   const [defaultTerms] = useState(getDefaultTermRange);
   const [startTerm, setStartTerm] = useState(
@@ -326,8 +376,13 @@ export function PlanSetup({
             these details later.
           </p>
           <div className="setup-aside-note">
-            <span className="setup-aside-mark" aria-hidden="true">✦</span>
-            <p>Make another plan to compare a different major, minor, or course path.</p>
+            <span className="setup-aside-mark" aria-hidden="true">
+              ✦
+            </span>
+            <p>
+              Make another plan to compare a different major, minor, or course
+              path.
+            </p>
           </div>
         </div>
 
@@ -381,8 +436,13 @@ export function PlanSetup({
               </button>
             </div>
           ) : (
-            <button className="add-minor-button" type="button" onClick={() => setMinorVisible(true)}>
-              <span aria-hidden="true">+</span> Add a minor <small>Optional</small>
+            <button
+              className="add-minor-button"
+              type="button"
+              onClick={() => setMinorVisible(true)}
+            >
+              <span aria-hidden="true">+</span> Add a minor{" "}
+              <small>Optional</small>
             </button>
           )}
 
@@ -390,32 +450,59 @@ export function PlanSetup({
             <div className="setup-form-heading semester-heading">
               <span>02</span>
               <div>
-                <h2>Semester range <small>Optional</small></h2>
+                <h2>
+                  Semester range <small>Optional</small>
+                </h2>
                 <p>Set a target window or leave these open for now.</p>
               </div>
             </div>
             <div className="semester-select-grid">
               <label className="setup-field" htmlFor="start-semester">
                 First semester
-                <select id="start-semester" value={startTerm} onChange={(event) => setStartTerm(event.target.value)}>
+                <select
+                  id="start-semester"
+                  value={startTerm}
+                  onChange={(event) => setStartTerm(event.target.value)}
+                >
                   <option value="">Choose later</option>
-                  {terms.map((term) => <option value={term.id} key={term.id}>{term.label}</option>)}
+                  {terms.map((term) => (
+                    <option value={term.id} key={term.id}>
+                      {term.label}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="setup-field" htmlFor="end-semester">
                 Last semester
-                <select id="end-semester" value={endTerm} onChange={(event) => setEndTerm(event.target.value)}>
+                <select
+                  id="end-semester"
+                  value={endTerm}
+                  onChange={(event) => setEndTerm(event.target.value)}
+                >
                   <option value="">Choose later</option>
-                  {terms.map((term) => <option value={term.id} key={term.id}>{term.label}</option>)}
+                  {terms.map((term) => (
+                    <option value={term.id} key={term.id}>
+                      {term.label}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
           </div>
-          {formError && <p className="error-message setup-error">{formError}</p>}
+          {formError && (
+            <p className="error-message setup-error">{formError}</p>
+          )}
           <div className="setup-form-actions">
-            <button className="secondary-button" type="button" onClick={onCancel}>Cancel</button>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={onCancel}
+            >
+              Cancel
+            </button>
             <button className="primary-button" type="submit">
-              {initialPlan ? "Save changes" : "Create and open plan"} <span aria-hidden="true">→</span>
+              {initialPlan ? "Save changes" : "Create and open plan"}{" "}
+              <span aria-hidden="true">→</span>
             </button>
           </div>
         </form>

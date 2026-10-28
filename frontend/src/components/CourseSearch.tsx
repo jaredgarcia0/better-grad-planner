@@ -6,10 +6,7 @@ type CourseSearchProps = {
   onAdd: (course: Course) => void;
 };
 
-function startCourseDrag(
-  event: DragEvent<HTMLElement>,
-  course: Course,
-): void {
+function startCourseDrag(event: DragEvent<HTMLElement>, course: Course): void {
   event.dataTransfer.effectAllowed = "copy";
   event.dataTransfer.setData("application/bgp-course", JSON.stringify(course));
 }

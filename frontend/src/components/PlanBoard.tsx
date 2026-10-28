@@ -38,7 +38,10 @@ export function PlanBoard({
 }: PlanBoardProps) {
   const allTerms = listPlanTerms();
   const startIndex = startTerm
-    ? Math.max(allTerms.findIndex((term) => term.id === startTerm), 0)
+    ? Math.max(
+        allTerms.findIndex((term) => term.id === startTerm),
+        0,
+      )
     : 0;
   const endMatch = endTerm
     ? allTerms.findIndex((term) => term.id === endTerm)
@@ -99,12 +102,11 @@ export function PlanBoard({
                       courses.filter((course) => course.termId === term.id)
                         .length,
                     0,
-                  )} {" "} courses planned
+                  )}{" "}
+                  courses planned
                 </small>
               </span>
-              <b aria-hidden="true">
-                {expandedYears[year.id] ? "⌃" : "⌄"}
-              </b>
+              <b aria-hidden="true">{expandedYears[year.id] ? "⌃" : "⌄"}</b>
             </button>
             {expandedYears[year.id] && (
               <div className="term-grid">
@@ -136,7 +138,8 @@ export function PlanBoard({
                       </div>
                       <div className="term-courses">
                         {termCourses.map((course) => {
-                          const hasIssue = prerequisiteIssues[course.id]?.length;
+                          const hasIssue =
+                            prerequisiteIssues[course.id]?.length;
                           return (
                             <div
                               className={`planned-course${hasIssue ? " has-prerequisite-issue" : ""}`}
