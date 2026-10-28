@@ -5,16 +5,34 @@ import {
   getCurrentUser,
   listCoursePrerequisites,
   logout,
+  Program,
   User,
 } from "./api/client";
 import { CourseSearch } from "./components/CourseSearch";
 import {
-  PlanBoard,
-  plannerYears,
-  PlannedCourse,
-} from "./components/PlanBoard";
+  GraduationPlan,
+  PlanLibrary,
+  PlanSetup,
+} from "./components/PlanLibrary";
+import { PlanBoard, PlannedCourse } from "./components/PlanBoard";
 import { RequirementsPanel } from "./components/RequirementsPanel";
 import { SignIn } from "./components/SignIn";
+import { getTermLabel, plannerYears } from "./plannerTerms";
+
+function savedPlansKey(workspaceId: string) {
+  return `better-grad-planner:${workspaceId}:plans`;
+}
+
+function loadPlans(workspaceId: string): GraduationPlan[] {
+  try {
+    const saved = localStorage.getItem(savedPlansKey(workspaceId));
+    if (!saved) return [];
+    const parsed = JSON.parse(saved) as unknown;
+    return Array.isArray(parsed) ? (parsed as GraduationPlan[]) : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -22,7 +40,11 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const [plannedCourses, setPlannedCourses] = useState<PlannedCourse[]>([]);
+  const [plans, setPlans] = useState<GraduationPlan[]>([]);
+  const [plansWorkspace, setPlansWorkspace] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<GraduationPlan | null>(null);
   const [courseToPlace, setCourseToPlace] = useState<Course | null>(null);
   const [selectedTermId, setSelectedTermId] = useState("fall-2026");
   const [prerequisiteIssues, setPrerequisiteIssues] = useState<
@@ -38,6 +60,41 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    function closeProfileMenu(event: MouseEvent) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", closeProfileMenu);
+    return () => document.removeEventListener("mousedown", closeProfileMenu);
+  }, []);
+
+  const workspaceId = user ? `user-${user.id}` : guestMode ? "guest" : null;
+
+  useEffect(() => {
+    if (authLoading || !workspaceId) return;
+    setPlans(loadPlans(workspaceId));
+    setPlansWorkspace(workspaceId);
+    setSelectedPlanId(null);
+    setSetupOpen(false);
+    setEditingPlan(null);
+  }, [authLoading, workspaceId]);
+
+  useEffect(() => {
+    if (!workspaceId || plansWorkspace !== workspaceId) return;
+    try {
+      localStorage.setItem(savedPlansKey(workspaceId), JSON.stringify(plans));
+    } catch {
+      // Keep the current session usable when browser storage is unavailable.
+    }
+  }, [plans, plansWorkspace, workspaceId]);
+
+  const activePlan = plans.find((plan) => plan.id === selectedPlanId) ?? null;
+
+  useEffect(() => {
     let cancelled = false;
     const termOrder = new Map(
       plannerYears.flatMap((year, yearIndex) =>
@@ -49,9 +106,10 @@ export default function App() {
     );
     const termLabels = new Map(
       plannerYears.flatMap((year) =>
-        year.terms.map((term) => [term.id, `${year.label} ${term.label}`]),
+        year.terms.map((term) => [term.id, term.label]),
       ),
     );
+    const plannedCourses = activePlan?.courses ?? [];
 
     async function checkPrerequisites() {
       const issues = await Promise.all(
@@ -63,7 +121,8 @@ export default function App() {
               course: (await getCourse(prerequisite.prerequisiteCourseId)).data,
             })),
           );
-          const currentOrder = termOrder.get(course.termId) ?? Number.MAX_SAFE_INTEGER;
+          const currentOrder =
+            termOrder.get(course.termId) ?? Number.MAX_SAFE_INTEGER;
           const scheduledCourses = new Map(
             plannedCourses.map((planned) => [planned.id, planned]),
           );
@@ -104,11 +163,10 @@ export default function App() {
               return scheduledOrder !== undefined && scheduledOrder < currentOrder;
             });
             if (!satisfied) {
-              const alternativesText = alternatives
-                .map((prerequisite) => prerequisite.course.code)
-                .join(" or ");
               messages.push(
-                `One of ${alternativesText} must be planned before ${course.code}.`,
+                `One of ${alternatives
+                  .map((prerequisite) => prerequisite.course.code)
+                  .join(" or ")} must be planned before ${course.code}.`,
               );
             }
           }
@@ -116,84 +174,46 @@ export default function App() {
           return { courseId: course.id, messages, prerequisites };
         }),
       );
-      if (!cancelled) {
-        const issueMap = new Map(
-          issues
-            .filter((result) => result.messages.length > 0)
-            .map((result) => [result.courseId, result.messages]),
-        );
-        const scheduledCourses = new Map(
-          plannedCourses.map((planned) => [planned.id, planned]),
-        );
+      if (cancelled) return;
 
-        // Propagate issues through prerequisite chains. For alternatives, the
-        // chain is blocking only when every planned alternative is blocked.
-        let changed = true;
-        while (changed) {
-          changed = false;
-          for (const result of issues) {
-            const blockedPrerequisites = result.prerequisites.filter(
-              (prerequisite) => {
-                if (prerequisite.isAlternative) return false;
-                const scheduled = scheduledCourses.get(
-                  prerequisite.prerequisiteCourseId,
-                );
-                return Boolean(
-                  scheduled && issueMap.has(scheduled.id),
-                );
-              },
-            );
-            const alternativeGroups = new Map<number, typeof result.prerequisites>();
-            for (const prerequisite of result.prerequisites) {
-              if (!prerequisite.isAlternative) continue;
-              const group =
-                alternativeGroups.get(prerequisite.groupNumber) ?? [];
-              group.push(prerequisite);
-              alternativeGroups.set(prerequisite.groupNumber, group);
-            }
-            for (const alternatives of alternativeGroups.values()) {
-              const scheduledAlternatives = alternatives.filter((prerequisite) =>
-                scheduledCourses.has(prerequisite.prerequisiteCourseId),
-              );
-              if (
-                scheduledAlternatives.length > 0 &&
-                scheduledAlternatives.every((prerequisite) =>
-                  issueMap.has(prerequisite.prerequisiteCourseId),
-                )
-              ) {
-                blockedPrerequisites.push(...scheduledAlternatives);
-              }
-            }
-
-            if (blockedPrerequisites.length === 0) continue;
-            const messages = issueMap.get(result.courseId) ?? [];
-            const hasPropagationMessage = messages.some((message) =>
-              message.startsWith("Fix prerequisite issue:"),
-            );
-            if (!hasPropagationMessage) {
-              const blockingDetails = blockedPrerequisites.map((prerequisite) => {
-                const blockingCourse = scheduledCourses.get(
-                  prerequisite.prerequisiteCourseId,
-                );
-                const blockingIssues = issueMap.get(
-                  prerequisite.prerequisiteCourseId,
-                );
-                return `${blockingCourse?.code ?? prerequisite.prerequisiteCourseId}: ${blockingIssues?.[0] ?? "its prerequisite is not satisfied"}`;
-              });
-              issueMap.set(result.courseId, [
-                ...messages,
-                `Fix prerequisite issue: ${blockingDetails.join("; ")}`,
-              ]);
-              changed = true;
-            }
+      const issueMap = new Map(
+        issues
+          .filter((result) => result.messages.length > 0)
+          .map((result) => [result.courseId, result.messages]),
+      );
+      const scheduledCourses = new Map(
+        plannedCourses.map((planned) => [planned.id, planned]),
+      );
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const result of issues) {
+          const blockedPrerequisites = result.prerequisites.filter((prerequisite) => {
+            if (prerequisite.isAlternative) return false;
+            const scheduled = scheduledCourses.get(prerequisite.prerequisiteCourseId);
+            return Boolean(scheduled && issueMap.has(scheduled.id));
+          });
+          if (blockedPrerequisites.length === 0) continue;
+          const messages = issueMap.get(result.courseId) ?? [];
+          if (messages.some((message) => message.startsWith("Fix prerequisite issue:"))) {
+            continue;
           }
+          const blockingDetails = blockedPrerequisites.map((prerequisite) => {
+            const blockingCourse = scheduledCourses.get(prerequisite.prerequisiteCourseId);
+            const blockingIssues = issueMap.get(prerequisite.prerequisiteCourseId);
+            return `${blockingCourse?.code ?? prerequisite.prerequisiteCourseId}: ${blockingIssues?.[0] ?? "its prerequisite is not satisfied"}`;
+          });
+          issueMap.set(result.courseId, [
+            ...messages,
+            `Fix prerequisite issue: ${blockingDetails.join("; ")}`,
+          ]);
+          changed = true;
         }
-
-        setPrerequisiteIssues(Object.fromEntries(issueMap));
       }
+      setPrerequisiteIssues(Object.fromEntries(issueMap));
     }
 
-    if (plannedCourses.length === 0) {
+    if (!activePlan || plannedCourses.length === 0) {
       setPrerequisiteIssues({});
     } else {
       void checkPrerequisites().catch(() => {
@@ -203,19 +223,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [plannedCourses]);
-
-  useEffect(() => {
-    function closeProfileMenu(event: MouseEvent) {
-      if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(event.target as Node)
-      )
-        setProfileOpen(false);
-    }
-    document.addEventListener("mousedown", closeProfileMenu);
-    return () => document.removeEventListener("mousedown", closeProfileMenu);
-  }, []);
+  }, [activePlan]);
 
   if (authLoading)
     return (
@@ -231,26 +239,45 @@ export default function App() {
       />
     );
 
-  const plannedCourseIds = new Set(plannedCourses.map((course) => course.id));
-  const completedCredits = 42;
-  const degreeCredits = 120;
-  const plannedCredits = plannedCourses.reduce(
-    (total, course) => total + course.credits,
-    0,
-  );
-  const unplannedCredits = Math.max(
-    degreeCredits - completedCredits - plannedCredits,
-    0,
-  );
   const initials = user ? user.email.slice(0, 2).toUpperCase() : "G";
+  const plannedCourseIds = new Set(
+    activePlan?.courses.map((course) => course.id) ?? [],
+  );
+
+  function handleSavePlan(plan: GraduationPlan) {
+    setPlans((current) => {
+      const existing = current.some((item) => item.id === plan.id);
+      return existing
+        ? current.map((item) => (item.id === plan.id ? plan : item))
+        : [...current, plan];
+    });
+    setSelectedPlanId(plan.id);
+    setSetupOpen(false);
+    setEditingPlan(null);
+  }
+
+  function updateActivePlanCourses(
+    update: (courses: GraduationPlan["courses"]) => GraduationPlan["courses"],
+  ) {
+    if (!activePlan) return;
+    setPlans((current) =>
+      current.map((plan) =>
+        plan.id === activePlan.id
+          ? { ...plan, courses: update(plan.courses) }
+          : plan,
+      ),
+    );
+  }
 
   function requestCoursePlacement(course: Course) {
     if (plannedCourseIds.has(course.id)) return;
-    setSelectedTermId("fall-2026");
+    if (!activePlan) return;
+    setSelectedTermId(activePlan.startTerm || "fall-2026");
     setCourseToPlace(course);
   }
+
   function placeCourse(course: Course, termId: string) {
-    setPlannedCourses((current) => {
+    updateActivePlanCourses((current) => {
       const existing = current.some((planned) => planned.id === course.id);
       if (existing) {
         return current.map((planned) =>
@@ -261,11 +288,21 @@ export default function App() {
     });
     setCourseToPlace(null);
   }
+
   function removeCourse(courseId: string) {
-    setPlannedCourses((current) =>
+    updateActivePlanCourses((current) =>
       current.filter((course) => course.id !== courseId),
     );
   }
+
+  function moveCourse(courseId: string, termId: string) {
+    updateActivePlanCourses((current) =>
+      current.map((course) =>
+        course.id === courseId ? { ...course, termId } : course,
+      ),
+    );
+  }
+
   async function handleSignOut() {
     try {
       if (user) await logout();
@@ -273,11 +310,20 @@ export default function App() {
       setProfileOpen(false);
       setUser(null);
       setGuestMode(false);
-      setPlannedCourses([]);
+      setPlans([]);
+      setPlansWorkspace(null);
+      setSelectedPlanId(null);
+      setSetupOpen(false);
+      setEditingPlan(null);
       setCourseToPlace(null);
       setIssueCourse(null);
+      setPrerequisiteIssues({});
     }
   }
+
+  const activePrograms: Program[] = activePlan
+    ? [activePlan.major, ...(activePlan.minor ? [activePlan.minor] : [])]
+    : [];
 
   return (
     <div className="app-shell">
@@ -286,6 +332,15 @@ export default function App() {
           <span className="brand-mark">B</span>
           <span>Better Grad Planner</span>
         </a>
+        {activePlan && !setupOpen && (
+          <button
+            className="header-plans-link"
+            type="button"
+            onClick={() => setSelectedPlanId(null)}
+          >
+            ← All plans
+          </button>
+        )}
         <div className="profile-menu" ref={profileMenuRef}>
           <button
             className="profile-button"
@@ -304,13 +359,6 @@ export default function App() {
               </div>
               <div className="profile-divider" />
               <button
-                type="button"
-                role="menuitem"
-                onClick={() => setProfileOpen(false)}
-              >
-                Account details <span>→</span>
-              </button>
-              <button
                 className="sign-out-button"
                 type="button"
                 role="menuitem"
@@ -322,77 +370,89 @@ export default function App() {
           )}
         </div>
       </header>
+
       <main>
-        <section className="student-header" id="overview">
-          <div>
-            <p className="eyebrow">STUDENT DASHBOARD</p>
-            <h1>Welcome back.</h1>
-            <p className="student-copy">
-              {user
-                ? `Signed in as ${user.email}. `
-                : "You are exploring as a guest. "}
-              Here’s your progress toward completing your degree.
-            </p>
-          </div>
-          <div className="degree-progress">
-            <span>Computer Science · B.S.</span>
-            <strong>
-              {completedCredits + plannedCredits}{" "}
-              <small>/ {degreeCredits} credits</small>
-            </strong>
-            <div className="progress-track">
-              <i
-                style={{
-                  width: `${Math.min(((completedCredits + plannedCredits) / degreeCredits) * 100, 100)}%`,
-                }}
-              />
-            </div>
-            <em>
-              {Math.round(
-                ((completedCredits + plannedCredits) / degreeCredits) * 100,
-              )}
-              % toward completion
-            </em>
-          </div>
-        </section>
-        <section className="stats-grid" aria-label="Catalog summary">
-          <div className="stat-card">
-            <span className="stat-icon green">✓</span>
-            <div>
-              <strong>{completedCredits}</strong>
-              <span>Completed credits</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <span className="stat-icon blue">◷</span>
-            <div>
-              <strong>{plannedCredits}</strong>
-              <span>Planned credits</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <span className="stat-icon gold">○</span>
-            <div>
-              <strong>{unplannedCredits}</strong>
-              <span>Unplanned credits</span>
-            </div>
-          </div>
-        </section>
-        <PlanBoard
-          courses={plannedCourses}
-          onRemove={removeCourse}
-          onPlaceCourse={placeCourse}
-          prerequisiteIssues={prerequisiteIssues}
-          onShowPrerequisiteIssue={setIssueCourse}
-        />
-        <div className="content-grid" id="courses">
-          <CourseSearch
-            plannedCourseIds={plannedCourseIds}
-            onAdd={requestCoursePlacement}
+        {setupOpen ? (
+          <PlanSetup
+            key={editingPlan?.id ?? "new-plan"}
+            initialPlan={editingPlan}
+            onCancel={() => {
+              setSetupOpen(false);
+              setEditingPlan(null);
+            }}
+            onSave={handleSavePlan}
           />
-          <RequirementsPanel />
-        </div>
+        ) : activePlan ? (
+          <>
+            <section className="plan-overview">
+              <div className="plan-overview-copy">
+                <p className="eyebrow">YOUR GRADUATION PLAN</p>
+                <h1>{activePlan.name}</h1>
+                <p className="student-copy">
+                  <strong>{activePlan.major.name}</strong>
+                  {activePlan.minor && (
+                    <> <span aria-hidden="true">·</span> Minor: {activePlan.minor.name}</>
+                  )}
+                </p>
+                <div className="plan-overview-tags">
+                  <span>
+                    {activePlan.startTerm
+                      ? `Starts ${getTermLabel(activePlan.startTerm)}`
+                      : "Start semester flexible"}
+                  </span>
+                  <span>
+                    {activePlan.endTerm
+                      ? `Target ${getTermLabel(activePlan.endTerm)}`
+                      : "End semester flexible"}
+                  </span>
+                </div>
+              </div>
+              <button
+                className="secondary-button edit-plan-button"
+                type="button"
+                onClick={() => {
+                  setEditingPlan(activePlan);
+                  setSetupOpen(true);
+                }}
+              >
+                Edit plan details
+              </button>
+            </section>
+            <PlanBoard
+              courses={activePlan.courses}
+              onRemove={removeCourse}
+              onMove={moveCourse}
+              initialTerm={activePlan.startTerm || "fall-2026"}
+              prerequisiteIssues={prerequisiteIssues}
+              onShowPrerequisiteIssue={setIssueCourse}
+            />
+            <div className="content-grid" id="courses">
+              <CourseSearch
+                plannedCourseIds={plannedCourseIds}
+                onAdd={requestCoursePlacement}
+              />
+              <RequirementsPanel programs={activePrograms} />
+            </div>
+          </>
+        ) : (
+          <PlanLibrary
+            plans={plans}
+            onOpen={setSelectedPlanId}
+            onCreate={() => {
+              setEditingPlan(null);
+              setSetupOpen(true);
+            }}
+            onEdit={(plan) => {
+              setEditingPlan(plan);
+              setSetupOpen(true);
+            }}
+            onDelete={(planId) => {
+              setPlans((current) => current.filter((plan) => plan.id !== planId));
+            }}
+          />
+        )}
       </main>
+
       {courseToPlace && (
         <div className="placement-overlay" role="presentation">
           <div
@@ -431,7 +491,7 @@ export default function App() {
                 <optgroup label={year.label} key={year.id}>
                   {year.terms.map((term) => (
                     <option value={term.id} key={term.id}>
-                      {term.label} {year.label}
+                      {term.label}
                     </option>
                   ))}
                 </optgroup>
@@ -456,6 +516,7 @@ export default function App() {
           </div>
         </div>
       )}
+
       {issueCourse && (
         <div className="placement-overlay" role="presentation">
           <div
@@ -498,6 +559,7 @@ export default function App() {
           </div>
         </div>
       )}
+
       <footer>
         <span>Better Grad Planner</span>
         <span>Built for a clearer path forward.</span>
