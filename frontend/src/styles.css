@@ -1331,39 +1331,33 @@ footer {
 .requirements-card {
   min-width: 0;
 }
-.requirement-layout__hint {
-  margin: 0 0 10px;
-  color: #829ab1;
-  font-size: 10px;
-}
-.requirement-layout-section {
-  margin-top: 10px;
-  border: 1px solid #e5edf1;
-  border-radius: 10px;
-  background: #fbfcfd;
-  transition: opacity .15s ease, box-shadow .15s ease;
-}
-.requirement-layout-section.is-dragging {
-  opacity: .55;
-  box-shadow: 0 8px 20px rgba(16, 42, 67, .12);
-}
-.requirement-layout-section__header {
+.program-tabs {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 38px;
-  padding: 7px 9px;
-  border-bottom: 1px solid #edf2f5;
-  cursor: grab;
+  gap: 7px;
+  overflow-x: auto;
+  margin: 0 -2px 14px;
+  padding: 2px;
+  scrollbar-width: thin;
 }
-.requirement-layout-section__header:active { cursor: grabbing; }
-.requirement-layout-section__header strong { flex: 1; color: #176078; font-size: 11px; }
-.requirement-drag-handle { color: #9aafbf; font-size: 16px; letter-spacing: -4px; }
-.requirement-layout-section__actions { display: flex; gap: 3px; }
-.requirement-layout-section__actions button { width: 22px; height: 22px; border: 0; border-radius: 5px; color: #627d98; background: #edf2f5; font-size: 12px; cursor: pointer; }
-.requirement-layout-section__actions button:hover:not(:disabled) { color: #176078; background: #d8eef0; }
-.requirement-layout-section__actions button:disabled { cursor: default; opacity: .35; }
-.requirement-layout-section .requirement-group { margin: 0 10px; }
+.program-tab {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 2px;
+  max-width: 180px;
+  border: 1px solid #dce8ed;
+  border-radius: 9px;
+  padding: 8px 10px;
+  color: #627d98;
+  background: #fbfcfd;
+  text-align: left;
+  cursor: pointer;
+}
+.program-tab:hover { border-color: #a9d5d9; background: #f2fbfb; }
+.program-tab[aria-selected="true"] { border-color: #167d9a; background: #e8f6f7; color: #176078; }
+.program-tab:focus-visible, .requirement-group-toggle:focus-visible { outline: 3px solid rgba(22, 125, 154, .28); outline-offset: 2px; }
+.program-tab span { font-size: 9px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.program-tab strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.program-requirements { border: 1px solid #e5edf1; border-radius: 10px; background: #fbfcfd; overflow: hidden; }
 .requirement-empty { margin: 0; padding: 14px 10px; font-size: 11px; }
 .text-button {
   border: 0;
@@ -1373,19 +1367,43 @@ footer {
   font-weight: 700;
 }
 .requirement-group {
-  border-top: 1px solid #edf2f5;
-  padding: 16px 0 3px;
+  border-top: 1px solid #e5edf1;
 }
-.requirement-group-heading {
+.requirement-group:first-child { border-top: 0; }
+.requirement-group-toggle {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  font-size: 12px;
+  width: 100%;
+  gap: 8px;
+  border: 0;
+  padding: 11px 10px;
+  color: #102a43;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
-.requirement-group-heading span {
+.requirement-group-toggle:hover { background: #f2f9fa; }
+.requirement-group-toggle__icon { width: 18px; color: #167d9a; font-size: 17px; font-weight: 400; text-align: center; }
+.requirement-group-toggle__copy { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.requirement-group-toggle__copy strong { font-size: 12px; }
+.requirement-group-toggle__copy span, .requirement-group-toggle__summary {
   color: #829ab1;
-  font-size: 11px;
+  font-size: 10px;
+}
+.requirement-group-toggle__summary { max-width: 115px; text-align: right; }
+.requirement-group-content { padding: 0 10px 8px 36px; }
+.requirement-group-description { margin: 0 0 6px; color: #627d98; font-size: 11px; line-height: 1.45; }
+.requirement-group-content .requirement-group { margin: 6px 0 0; border: 1px solid #e5edf1; border-radius: 8px; background: #fff; }
+.requirement-group-content .requirement-group-content { padding-left: 28px; }
+.requirement-group-content .requirement-group:first-child { border-top: 1px solid #e5edf1; }
+.requirement-group-content .requirement-group-toggle { padding: 9px 8px; }
+.requirement-group-content .requirement-group-toggle__summary { display: none; }
+.requirement-item + .requirement-item { border-top: 1px solid #edf2f5; }
+.requirement-item small { color: #829ab1; font-size: 10px; }
+@media (max-width: 480px) {
+  .program-tab { max-width: 150px; }
+  .requirement-group-toggle__summary { display: none; }
+  .requirement-group-content { padding-left: 14px; }
 }
 .requirement-item {
   display: flex;

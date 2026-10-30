@@ -370,9 +370,7 @@ export default function App() {
     }
   }
 
-  const activePrograms = activePlan
-    ? getPlanPrograms(activePlan).map(({ program }) => program)
-    : [];
+  const activePrograms = activePlan ? getPlanPrograms(activePlan) : [];
 
   function handleSidebarNavigate(href: string) {
     const planId = href.match(/^\/plans\/([^/]+)/)?.[1];
