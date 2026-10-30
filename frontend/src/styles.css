@@ -544,6 +544,39 @@ a {
 }
 .plan-notes__save-button:hover { background: #125e73; }
 .plan-notes__save-button:disabled { opacity: .45; cursor: not-allowed; }
+.plan-delete-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 42, 67, .45);
+}
+.plan-delete-dialog {
+  width: min(100%, 420px);
+  border: 1px solid #d8e4e8;
+  border-radius: 14px;
+  padding: 28px;
+  color: #243b53;
+  background: #fff;
+  box-shadow: 0 22px 60px rgba(16, 42, 67, .2);
+}
+.plan-delete-dialog__eyebrow {
+  margin: 0 0 8px;
+  color: #b5473d;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.plan-delete-dialog h2 { margin: 0 0 10px; color: #102a43; font-family: Fraunces, Georgia, serif; font-size: 28px; }
+.plan-delete-dialog p:not(.plan-delete-dialog__eyebrow) { margin: 0; color: #627d98; line-height: 1.6; }
+.plan-delete-dialog__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.plan-delete-dialog__cancel, .plan-delete-dialog__confirm { border-radius: 8px; padding: 10px 15px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.plan-delete-dialog__cancel { border: 1px solid #c8d8df; color: #176078; background: #fff; }
+.plan-delete-dialog__confirm { border: 1px solid #b5473d; color: #fff; background: #b5473d; }
+.plan-delete-dialog__confirm:hover { background: #963c34; }
 @media (max-width: 720px) {
   .plan-notes { padding: 28px 18px 48px; }
   .plan-notes__header { margin-top: 28px; }

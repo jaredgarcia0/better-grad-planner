@@ -47,6 +47,7 @@ export function PlanSidebar({
   onSignOut,
 }: PlanSidebarProps) {
   const [plansOpen, setPlansOpen] = useState(true);
+  const [deleteCandidate, setDeleteCandidate] = useState<GraduationPlan | null>(null);
   const activePlan = plans.find((plan) => plan.id === activePlanId) ?? null;
 
   function handleNavigation(event: MouseEvent<HTMLAnchorElement>) {
@@ -136,7 +137,7 @@ export function PlanSidebar({
                           <button
                             className="plan-sidebar__delete"
                             type="button"
-                            onClick={() => onDeletePlan(plan)}
+                            onClick={() => setDeleteCandidate(plan)}
                             aria-label={`Delete ${plan.name}`}
                             title="Delete plan"
                           >
@@ -208,6 +209,43 @@ export function PlanSidebar({
           <span aria-hidden="true">↪</span>
         </button>
       </div>
+
+      {deleteCandidate && (
+        <div className="plan-delete-overlay" role="presentation">
+          <div
+            className="plan-delete-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="plan-delete-title"
+            aria-describedby="plan-delete-description"
+          >
+            <p className="plan-delete-dialog__eyebrow">Delete plan</p>
+            <h2 id="plan-delete-title">Delete “{deleteCandidate.name}”?</h2>
+            <p id="plan-delete-description">
+              This removes the plan and its planned courses from this workspace.
+            </p>
+            <div className="plan-delete-dialog__actions">
+              <button
+                className="plan-delete-dialog__cancel"
+                type="button"
+                onClick={() => setDeleteCandidate(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="plan-delete-dialog__confirm"
+                type="button"
+                onClick={() => {
+                  onDeletePlan(deleteCandidate);
+                  setDeleteCandidate(null);
+                }}
+              >
+                Delete plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
