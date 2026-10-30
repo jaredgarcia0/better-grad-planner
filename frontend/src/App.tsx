@@ -16,6 +16,7 @@ import {
   PlanSetup,
 } from "./components/PlanLibrary";
 import { PlanBoard, PlannedCourse } from "./components/PlanBoard";
+import { PlanSidebar } from "./components/PlanSidebar";
 import { RequirementsPanel } from "./components/RequirementsPanel";
 import { SignIn } from "./components/SignIn";
 import { getTermLabel, listPlanTerms, plannerYears } from "./plannerTerms";
@@ -372,8 +373,33 @@ export default function App() {
     ? [activePlan.major, ...(activePlan.minor ? [activePlan.minor] : [])]
     : [];
 
+  function handleSidebarNavigate(href: string) {
+    const planId = href.match(/^\/plans\/([^/]+)/)?.[1];
+    setSetupOpen(false);
+    setEditingPlan(null);
+    setSelectedPlanId(planId ?? null);
+  }
+
   return (
     <div className="app-shell">
+      <div className="planner-shell">
+        <PlanSidebar
+          plans={plans}
+          activePlanId={selectedPlanId}
+          activeView="planner"
+          user={user ?? { email: "Guest student" }}
+          onNavigate={handleSidebarNavigate}
+          onCreatePlan={() => {
+            setEditingPlan(null);
+            setSetupOpen(true);
+          }}
+          onDeletePlan={(plan) => {
+            setPlans((current) => current.filter((item) => item.id !== plan.id));
+            if (selectedPlanId === plan.id) setSelectedPlanId(null);
+          }}
+          onSignOut={handleSignOut}
+        />
+        <div className="planner-page">
       <header className="topbar">
         <a className="brand" href="/" aria-label="Better Grad Planner home">
           <span className="brand-mark">B</span>
@@ -622,6 +648,8 @@ export default function App() {
         <span>Better Grad Planner</span>
         <span>Built for a clearer path forward.</span>
       </footer>
+        </div>
+    </div>
     </div>
   );
 }

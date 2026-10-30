@@ -1,14 +1,15 @@
 import { useState, type MouseEvent } from "react";
-import type { DegreePlan, User } from "../api/client";
+import type { User } from "../api/client";
+import type { GraduationPlan } from "./PlanLibrary";
 
 type PlanSidebarProps = {
-  plans: DegreePlan[];
+  plans: GraduationPlan[];
   activePlanId: string | null;
   activeView: "planner" | "notes";
-  user: User;
+  user: Pick<User, "email">;
   onNavigate: (href: string) => void;
   onCreatePlan: () => void;
-  onDeletePlan: (plan: DegreePlan) => void;
+  onDeletePlan: (plan: GraduationPlan) => void;
   onSignOut: () => void;
 };
 
