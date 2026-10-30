@@ -438,6 +438,20 @@ a {
 .plan-sidebar__profile-copy { display: grid; min-width: 0; gap: 2px; font-size: 12px; }
 .plan-sidebar__profile-copy span { overflow: hidden; color: #9fc0bd; text-overflow: ellipsis; white-space: nowrap; }
 .plan-sidebar__sign-out { margin-top: 14px; padding: 8px 0; color: #b8d2d0; }
+@media (max-width: 900px) {
+  .planner-shell { display: block; }
+  .plan-sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 14px 16px;
+  }
+  .plan-sidebar__header { padding: 0 0 12px; }
+  .plan-sidebar__nav { display: none; }
+  .plan-sidebar__account { display: none; }
+  .planner-page { width: 100%; }
+}
 .topbar {
   height: 76px;
   max-width: 1180px;
