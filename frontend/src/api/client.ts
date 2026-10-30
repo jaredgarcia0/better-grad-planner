@@ -20,7 +20,22 @@ export type University = {
   name: string;
   shortName?: string | null;
 };
-export type Program = { id: string; name: string; degreeType?: string | null };
+export type Program = {
+  id: string;
+  name: string;
+  code?: string;
+  degreeType?: string | null;
+  catalogYear?: number | null;
+  totalCredits?: number | null;
+};
+export type AcademicTerm = {
+  id: string;
+  universityId: string;
+  name: string;
+  code: string;
+  startsOn: string;
+  endsOn: string;
+};
 export type RequirementGroup = {
   id: string;
   name: string;
@@ -39,6 +54,52 @@ export type User = {
   email: string;
   emailVerifiedAt: string | null;
 };
+
+export type DegreePlanStatus = "DRAFT" | "ARCHIVED" | "DECLARED";
+
+export type DegreePlan = {
+  id: string;
+  userId: string;
+  programId: string;
+  name: string;
+  notes: string | null;
+  status: DegreePlanStatus;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateDegreePlanPayload = {
+  programId: string;
+  name: string;
+  notes?: string | null;
+  status?: DegreePlanStatus;
+  isDefault?: boolean;
+};
+
+export type UpdateDegreePlanPayload = Partial<
+  Pick<DegreePlan, "programId" | "name" | "notes" | "status" | "isDefault">
+>;
+
+export type PlannedCourseEntry = {
+  id: string;
+  planId: string;
+  courseId: string;
+  termId: string | null;
+  sequence: number;
+  notes: string | null;
+};
+
+export type CreatePlannedCoursePayload = {
+  courseId: string;
+  termId?: string | null;
+  sequence?: number;
+  notes?: string | null;
+};
+
+export type UpdatePlannedCoursePayload = Partial<
+  Pick<PlannedCourseEntry, "courseId" | "termId" | "sequence" | "notes">
+>;
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? "";
 
@@ -123,10 +184,37 @@ export function listUniversities() {
   return apiRequest<ApiList<University>>("/api/universities?pageSize=5");
 }
 
-export function listPrograms(query = "") {
-  const params = new URLSearchParams({ pageSize: "5" });
+export function listPrograms(query = "", page = 1) {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: "100",
+  });
   if (query.trim()) params.set("q", query.trim());
   return apiRequest<ApiList<Program>>(`/api/programs?${params}`);
+}
+
+export async function listAllPrograms() {
+  const firstPage = await listPrograms();
+  if (firstPage.pagination.totalPages <= 1) return firstPage.data;
+
+  const remainingPages = await Promise.all(
+    Array.from(
+      { length: firstPage.pagination.totalPages - 1 },
+      (_, index) => listPrograms("", index + 2),
+    ),
+  );
+  return [
+    ...firstPage.data,
+    ...remainingPages.flatMap((page) => page.data),
+  ];
+}
+
+export function getProgram(programId: string) {
+  return apiRequest<{ data: Program }>(`/api/programs/${programId}`);
+}
+
+export function listTerms() {
+  return apiRequest<ApiList<AcademicTerm>>("/api/terms?pageSize=100");
 }
 
 export function listProgramRequirements(programId: string) {
@@ -143,4 +231,80 @@ export function listRequirementCourses(requirementId: string) {
 
 export function getCourse(courseId: string) {
   return apiRequest<{ data: Course }>(`/api/courses/${courseId}`);
+}
+
+export function listPlans(status?: DegreePlanStatus) {
+  const params = new URLSearchParams({ pageSize: "100" });
+  if (status) params.set("status", status);
+  return apiRequest<ApiList<DegreePlan>>(`/api/plans?${params}`);
+}
+
+export function getPlan(planId: string) {
+  return apiRequest<{ data: DegreePlan }>(`/api/plans/${planId}`);
+}
+
+export function createPlan(payload: CreateDegreePlanPayload) {
+  return apiRequest<{ data: DegreePlan }>("/api/plans", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updatePlan(
+  planId: string,
+  payload: UpdateDegreePlanPayload,
+) {
+  return apiRequest<{ data: DegreePlan }>(`/api/plans/${planId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deletePlan(planId: string) {
+  return apiRequest<void>(`/api/plans/${planId}`, { method: "DELETE" });
+}
+
+export function listPlannedCourses(planId: string, termId?: string) {
+  const params = new URLSearchParams({ pageSize: "100" });
+  if (termId) params.set("termId", termId);
+  return apiRequest<ApiList<PlannedCourseEntry>>(
+    `/api/plans/${planId}/courses?${params}`,
+  );
+}
+
+export function createPlannedCourse(
+  planId: string,
+  payload: CreatePlannedCoursePayload,
+) {
+  return apiRequest<{ data: PlannedCourseEntry }>(
+    `/api/plans/${planId}/courses`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function updatePlannedCourse(
+  planId: string,
+  courseEntryId: string,
+  payload: UpdatePlannedCoursePayload,
+) {
+  return apiRequest<{ data: PlannedCourseEntry }>(
+    `/api/plans/${planId}/courses/${courseEntryId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function deletePlannedCourse(
+  planId: string,
+  courseEntryId: string,
+) {
+  return apiRequest<void>(
+    `/api/plans/${planId}/courses/${courseEntryId}`,
+    { method: "DELETE" },
+  );
 }

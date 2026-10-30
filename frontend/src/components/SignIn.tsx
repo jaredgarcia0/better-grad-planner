@@ -3,11 +3,10 @@ import { login, register, User, verifyEmail } from "../api/client";
 
 type SignInProps = {
   onAuthenticated: (user: User) => void;
-  onContinueAsGuest: () => void;
 };
 type AuthMode = "login" | "register" | "verify";
 
-export function SignIn({ onAuthenticated, onContinueAsGuest }: SignInProps) {
+export function SignIn({ onAuthenticated }: SignInProps) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -66,12 +65,7 @@ export function SignIn({ onAuthenticated, onContinueAsGuest }: SignInProps) {
           <span className="brand-mark">B</span>
           <span>Better Grad Planner</span>
         </a>
-        <span className="auth-help">
-          New here?{" "}
-          <button type="button" onClick={onContinueAsGuest}>
-            Explore the planner
-          </button>
-        </span>
+        <span className="auth-help">Secure student planning</span>
       </header>
       <main className="auth-main">
         <section className="auth-card" aria-labelledby="sign-in-title">
@@ -205,15 +199,6 @@ export function SignIn({ onAuthenticated, onContinueAsGuest }: SignInProps) {
               onClick={() => switchMode("login")}
             >
               Back to sign in <span>→</span>
-            </button>
-          )}
-          {mode === "login" && (
-            <button
-              className="text-link guest-link"
-              type="button"
-              onClick={onContinueAsGuest}
-            >
-              Continue as guest
             </button>
           )}
           <p className="auth-legal">

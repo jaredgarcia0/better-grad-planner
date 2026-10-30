@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   getCourse,
+  getProgram,
   listProgramRequirements,
   listPrograms,
   listRequirementCourses,
@@ -37,23 +38,32 @@ function RequirementGroupView({
   );
 }
 
-export function RequirementsPanel() {
+type RequirementsPanelProps = {
+  programId?: string;
+};
+
+export function RequirementsPanel({
+  programId,
+}: RequirementsPanelProps = {}) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [programName, setProgramName] = useState("Degree requirements");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     async function loadRequirements() {
+      setLoading(true);
+      setError(null);
       try {
-        const matchingPrograms = await listPrograms("computer");
-        const program =
-          matchingPrograms.data[0] ?? (await listPrograms()).data[0];
-        if (!program) {
-          setGroups([]);
+        const program = programId
+          ? (await getProgram(programId)).data
+          : (await listPrograms("computer")).data[0] ??
+            (await listPrograms()).data[0];
+        if (!program?.id) {
+          if (!cancelled) setGroups([]);
           return;
         }
-        setProgramName(program.name);
         const requirementResult = await listProgramRequirements(program.id);
         const loadedGroups = await Promise.all(
           requirementResult.data.map(async (group) => {
@@ -71,19 +81,26 @@ export function RequirementsPanel() {
             return { ...group, courses };
           }),
         );
-        setGroups(loadedGroups);
+        if (!cancelled) {
+          setProgramName(program.name);
+          setGroups(loadedGroups);
+        }
       } catch (requestError) {
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : "Unable to load degree requirements",
-        );
+        if (!cancelled)
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Unable to load degree requirements",
+          );
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     void loadRequirements();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [programId]);
 
   const major = groups.filter((group) =>
     ["REQUIRED", "CONCENTRATION", "CAPSTONE"].includes(group.requirementType),
