@@ -5,13 +5,13 @@ import {
   getCurrentUser,
   listCoursePrerequisites,
   logout,
-  Program,
-  RequirementSectionId,
   User,
 } from "./api/client";
 import { CourseSearch } from "./components/CourseSearch";
 import {
   GraduationPlan,
+  getPlanPrograms,
+  normalizeGraduationPlan,
   PlanLibrary,
   PlanSetup,
 } from "./components/PlanLibrary";
@@ -31,7 +31,11 @@ function loadPlans(workspaceId: string): GraduationPlan[] {
     const saved = localStorage.getItem(savedPlansKey(workspaceId));
     if (!saved) return [];
     const parsed = JSON.parse(saved) as unknown;
-    return Array.isArray(parsed) ? (parsed as GraduationPlan[]) : [];
+    return Array.isArray(parsed)
+      ? parsed
+          .map((plan) => normalizeGraduationPlan(plan as GraduationPlan))
+          .filter((plan): plan is GraduationPlan => plan !== null)
+      : [];
   } catch {
     return [];
   }
@@ -347,13 +351,6 @@ export default function App() {
     );
   }
 
-  function saveRequirementLayout(layout: RequirementSectionId[]) {
-    if (!activePlan) return;
-    setPlans((current) => current.map((plan) =>
-      plan.id === activePlan.id ? { ...plan, requirementLayout: layout } : plan,
-    ));
-  }
-
   async function handleSignOut() {
     try {
       if (user) await logout();
@@ -373,8 +370,8 @@ export default function App() {
     }
   }
 
-  const activePrograms: Program[] = activePlan
-    ? [activePlan.major, ...(activePlan.minor ? [activePlan.minor] : [])]
+  const activePrograms = activePlan
+    ? getPlanPrograms(activePlan).map(({ program }) => program)
     : [];
 
   function handleSidebarNavigate(href: string) {
@@ -479,12 +476,17 @@ export default function App() {
                 <p className="eyebrow">YOUR GRADUATION PLAN</p>
                 <h1>{activePlan.name}</h1>
                 <p className="student-copy">
-                  <strong>{activePlan.major.name}</strong>
-                  {activePlan.minor && (
+                  {getPlanPrograms(activePlan).map(({ role, program }, index) => (
+                    <span key={program.id}>
+                      {index > 0 && " · "}
+                      <strong>{role[0]}{role.slice(1).toLowerCase()}:</strong> {program.name}
+                    </span>
+                  ))}
+                  {activePlan && false && activePlan?.minor && (
                     <>
                       {" "}
                       <span aria-hidden="true">·</span> Minor:{" "}
-                      {activePlan.minor.name}
+                      {activePlan?.minor?.name}
                     </>
                   )}
                 </p>
@@ -528,8 +530,6 @@ export default function App() {
               />
               <RequirementsPanel
                 programs={activePrograms}
-                layout={activePlan.requirementLayout}
-                onLayoutChange={saveRequirementLayout}
               />
             </div>
           </>

@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
-import {
-  getCourse,
-  listProgramRequirements,
-  listRequirementCourses,
-  Program,
-  RequirementGroup,
-  RequirementSectionId,
-} from "../api/client";
+import { getProgramRequirementTree, Program, RequirementNode, RequirementSectionId } from "../api/client";
 
 type Requirement = { code: string; title: string; credits: number };
-type Group = RequirementGroup & { courses: Requirement[] };
+type Group = Omit<RequirementNode, "courses" | "children"> & { courses: Requirement[] };
 type ProgramGroups = { program: Program; groups: Group[] };
+
+function flattenRequirementNodes(nodes: RequirementNode[]): Group[] {
+  return nodes.flatMap((node) => [
+    {
+      ...node,
+      courses: node.courses.map((link) => ({
+        code: link.course.code,
+        title: link.course.title,
+        credits: link.creditsOverride ?? link.course.credits,
+      })),
+    },
+    ...flattenRequirementNodes(node.children),
+  ]);
+}
 
 function RequirementGroupView({ group }: { group: Group }) {
   return (
@@ -39,23 +46,8 @@ function RequirementGroupView({ group }: { group: Group }) {
 }
 
 async function loadProgramGroups(program: Program): Promise<ProgramGroups> {
-  const requirementResult = await listProgramRequirements(program.id);
-  const groups = await Promise.all(
-    requirementResult.data.map(async (group) => {
-      const links = await listRequirementCourses(group.id);
-      const courses = await Promise.all(
-        links.data.map(async (link) => {
-          const result = await getCourse(link.courseId);
-          return {
-            code: result.data.code,
-            title: result.data.title,
-            credits: link.creditsOverride ?? result.data.credits,
-          };
-        }),
-      );
-      return { ...group, courses };
-    }),
-  );
+  const requirementResult = await getProgramRequirementTree(program.id);
+  const groups = flattenRequirementNodes(requirementResult.data);
   return { program, groups };
 }
 
