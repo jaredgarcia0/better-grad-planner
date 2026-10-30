@@ -49,6 +49,20 @@ export type User = {
   emailVerifiedAt: string | null;
 };
 
+export type RequirementSectionId = "major" | "general" | "electives";
+export type DegreePlan = {
+  id: string;
+  userId: string;
+  programId: string;
+  name: string;
+  notes: string | null;
+  requirementLayout: RequirementSectionId[] | null;
+  status: "DRAFT" | "ARCHIVED" | "DECLARED";
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? "";
 
 export async function apiRequest<T>(

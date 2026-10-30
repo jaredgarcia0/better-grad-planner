@@ -187,6 +187,7 @@ model DegreePlan {
   programId String           @db.Uuid
   name      String
   notes     String?
+  requirementLayout Json?
   status    DegreePlanStatus @default(DRAFT)
   isDefault Boolean          @default(false)
   createdAt DateTime         @default(now())

@@ -40,6 +40,7 @@ export const listDegreePlans = asyncHandler(async (req, res) => {
         programId: true,
         name: true,
         notes: true,
+        requirementLayout: true,
         status: true,
         isDefault: true,
         createdAt: true,

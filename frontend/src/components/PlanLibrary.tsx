@@ -15,6 +15,7 @@ export type GraduationPlan = {
   startTerm: string;
   endTerm: string;
   courses: PlannedCourse[];
+  requirementLayout?: import("../api/client").RequirementSectionId[];
 };
 
 function termRangeLabel(startTerm: string, endTerm: string) {

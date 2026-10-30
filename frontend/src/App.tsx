@@ -6,6 +6,7 @@ import {
   listCoursePrerequisites,
   logout,
   Program,
+  RequirementSectionId,
   User,
 } from "./api/client";
 import { CourseSearch } from "./components/CourseSearch";
@@ -342,6 +343,13 @@ export default function App() {
     );
   }
 
+  function saveRequirementLayout(layout: RequirementSectionId[]) {
+    if (!activePlan) return;
+    setPlans((current) => current.map((plan) =>
+      plan.id === activePlan.id ? { ...plan, requirementLayout: layout } : plan,
+    ));
+  }
+
   async function handleSignOut() {
     try {
       if (user) await logout();
@@ -475,7 +483,11 @@ export default function App() {
                 plannedCourseIds={plannedCourseIds}
                 onAdd={requestCoursePlacement}
               />
-              <RequirementsPanel programs={activePrograms} />
+              <RequirementsPanel
+                programs={activePrograms}
+                layout={activePlan.requirementLayout}
+                onLayoutChange={saveRequirementLayout}
+              />
             </div>
           </>
         ) : (

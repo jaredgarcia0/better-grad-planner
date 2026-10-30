@@ -57,6 +57,10 @@ const degreePlanFields = {
   programId: uuidSchema,
   name: requiredStringSchema,
   notes: optionalStringSchema,
+  requirementLayout: z
+    .array(z.enum(["major", "general", "electives"]))
+    .max(3)
+    .optional(),
   status: degreePlanStatusSchema,
   isDefault: booleanSchema,
 };

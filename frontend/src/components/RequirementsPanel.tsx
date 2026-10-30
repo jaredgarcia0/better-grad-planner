@@ -5,6 +5,7 @@ import {
   listRequirementCourses,
   Program,
   RequirementGroup,
+  RequirementSectionId,
 } from "../api/client";
 
 type Requirement = { code: string; title: string; credits: number };
@@ -58,11 +59,26 @@ async function loadProgramGroups(program: Program): Promise<ProgramGroups> {
   return { program, groups };
 }
 
-export function RequirementsPanel({ programs }: { programs: Program[] }) {
+export function RequirementsPanel({
+  programs,
+  layout,
+  onLayoutChange,
+}: {
+  programs: Program[];
+  layout?: RequirementSectionId[];
+  onLayoutChange?: (layout: RequirementSectionId[]) => void;
+}) {
   const [programGroups, setProgramGroups] = useState<ProgramGroups[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sectionOrder, setSectionOrder] = useState<RequirementSectionId[]>(
+    layout?.length ? layout : ["major", "general", "electives"],
+  );
   const programKey = programs.map((program) => program.id).join(",");
+
+  useEffect(() => {
+    setSectionOrder(layout?.length ? layout : ["major", "general", "electives"]);
+  }, [layout]);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +113,54 @@ export function RequirementsPanel({ programs }: { programs: Program[] }) {
     };
   }, [programKey]);
 
+  const orderedSections = Array.from(
+    new Set([...sectionOrder, "major", "general", "electives"]),
+  ) as RequirementSectionId[];
+
+  function moveSection(section: RequirementSectionId, direction: -1 | 1) {
+    const index = orderedSections.indexOf(section);
+    const target = index + direction;
+    if (target < 0 || target >= orderedSections.length) return;
+    const next = [...orderedSections];
+    [next[index], next[target]] = [next[target], next[index]];
+    setSectionOrder(next);
+    onLayoutChange?.(next);
+  }
+
+  function renderSection(section: RequirementSectionId) {
+    if (section === "electives") {
+      return (
+        <section className="requirement-layout-section" key={section}>
+          <header className="requirement-layout-section__header">
+            <strong>Electives</strong>
+            <span className="requirement-layout-section__actions">
+              <button type="button" onClick={() => moveSection(section, -1)} aria-label="Move electives up">↑</button>
+              <button type="button" onClick={() => moveSection(section, 1)} aria-label="Move electives down">↓</button>
+            </span>
+          </header>
+          <p className="muted">Elective options are pulled from the selected program requirements.</p>
+        </section>
+      );
+    }
+    const program = section === "major"
+      ? programGroups.find(({ program }) => program.degreeType !== "MINOR")
+      : programGroups.find(({ program }) => program.degreeType === "MINOR");
+    if (!program) return null;
+    return (
+      <section className="program-requirements requirement-layout-section" key={section}>
+        <div className="program-requirements-heading">
+          <span>{program.program.degreeType === "MINOR" ? "MINOR" : "MAJOR"}</span>
+          <strong>{program.program.name}</strong>
+          <span className="requirement-layout-section__actions">
+            <button type="button" onClick={() => moveSection(section, -1)} aria-label={`Move ${section} up`}>↑</button>
+            <button type="button" onClick={() => moveSection(section, 1)} aria-label={`Move ${section} down`}>↓</button>
+          </span>
+        </div>
+        {program.groups.map((group) => <RequirementGroupView key={group.id} group={group} />)}
+      </section>
+    );
+  }
+
   return (
     <aside className="card requirements-card">
       <div className="section-heading">
@@ -113,25 +177,12 @@ export function RequirementsPanel({ programs }: { programs: Program[] }) {
       {!loading && !error && programGroups.length === 0 && (
         <p className="muted">No requirements found for this program.</p>
       )}
-      {!loading &&
-        !error &&
-        programGroups.map(({ program, groups }) => (
-          <section className="program-requirements" key={program.id}>
-            <div className="program-requirements-heading">
-              <span>{program.degreeType === "MINOR" ? "MINOR" : "MAJOR"}</span>
-              <strong>{program.name}</strong>
-            </div>
-            {groups.length === 0 ? (
-              <p className="muted">
-                No requirements are listed for this program yet.
-              </p>
-            ) : (
-              groups.map((group) => (
-                <RequirementGroupView key={group.id} group={group} />
-              ))
-            )}
-          </section>
-        ))}
+      {!loading && !error && programGroups.length > 0 && (
+        <div className="requirement-layout" aria-label="Reorderable degree requirement sections">
+          <p className="requirement-layout__hint">Use the arrows to arrange your plan</p>
+          {orderedSections.map(renderSection)}
+        </div>
+      )}
     </aside>
   );
 }
