@@ -16,6 +16,7 @@ import {
   PlanSetup,
 } from "./components/PlanLibrary";
 import { PlanBoard, PlannedCourse } from "./components/PlanBoard";
+import { PlanNotes } from "./components/PlanNotes";
 import { PlanSidebar } from "./components/PlanSidebar";
 import { RequirementsPanel } from "./components/RequirementsPanel";
 import { SignIn } from "./components/SignIn";
@@ -45,6 +46,7 @@ export default function App() {
   const [plans, setPlans] = useState<GraduationPlan[]>([]);
   const [plansWorkspace, setPlansWorkspace] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [notesPlanId, setNotesPlanId] = useState<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<GraduationPlan | null>(null);
   const [courseToPlace, setCourseToPlace] = useState<Course | null>(null);
@@ -293,6 +295,7 @@ export default function App() {
         : [...current, plan];
     });
     setSelectedPlanId(plan.id);
+    setNotesPlanId(null);
     setSetupOpen(false);
     setEditingPlan(null);
   }
@@ -361,6 +364,7 @@ export default function App() {
       setPlans([]);
       setPlansWorkspace(null);
       setSelectedPlanId(null);
+      setNotesPlanId(null);
       setSetupOpen(false);
       setEditingPlan(null);
       setCourseToPlace(null);
@@ -375,9 +379,11 @@ export default function App() {
 
   function handleSidebarNavigate(href: string) {
     const planId = href.match(/^\/plans\/([^/]+)/)?.[1];
+    const isNotes = /\/notes\/?$/.test(href);
     setSetupOpen(false);
     setEditingPlan(null);
     setSelectedPlanId(planId ?? null);
+    setNotesPlanId(isNotes ? planId ?? null : null);
   }
 
   return (
@@ -386,7 +392,7 @@ export default function App() {
         <PlanSidebar
           plans={plans}
           activePlanId={selectedPlanId}
-          activeView="planner"
+          activeView={notesPlanId === selectedPlanId ? "notes" : "planner"}
           user={user ?? { email: "Guest student" }}
           onNavigate={handleSidebarNavigate}
           onCreatePlan={() => {
@@ -454,6 +460,17 @@ export default function App() {
               setEditingPlan(null);
             }}
             onSave={handleSavePlan}
+          />
+        ) : activePlan && notesPlanId === activePlan.id ? (
+          <PlanNotes
+            plan={activePlan}
+            onSave={async (notes) => {
+              setPlans((current) => current.map((plan) =>
+                plan.id === activePlan.id ? { ...plan, notes } : plan,
+              ));
+            }}
+            onBack={() => setNotesPlanId(null)}
+            onDirtyChange={() => undefined}
           />
         ) : activePlan ? (
           <>

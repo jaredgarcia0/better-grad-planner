@@ -15,6 +15,7 @@ export type GraduationPlan = {
   startTerm: string;
   endTerm: string;
   courses: PlannedCourse[];
+  notes?: string;
   requirementLayout?: import("../api/client").RequirementSectionId[];
 };
 

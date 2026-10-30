@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import type { DegreePlan } from "../api/client";
+type NotesPlan = { id: string; name: string; notes?: string | null };
 
 type PlanNotesProps = {
-  plan: DegreePlan;
+  plan: NotesPlan;
   onSave: (notes: string) => Promise<void>;
   onBack: () => void;
   onDirtyChange: (dirty: boolean) => void;
