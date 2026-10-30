@@ -395,28 +395,31 @@ a {
   min-height: 100vh;
 }
 .planner-shell {
-  display: flex;
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
   min-height: 100vh;
   background: #f7f9fb;
 }
 .planner-page {
   min-width: 0;
-  flex: 1;
+  overflow-x: hidden;
 }
 .plan-sidebar {
   position: sticky;
   top: 0;
   display: flex;
-  flex: 0 0 250px;
   flex-direction: column;
-  width: 250px;
+  width: auto;
   height: 100vh;
-  padding: 24px 16px 18px;
-  background: #123f4b;
-  color: #eaf5f3;
+  min-width: 0;
+  padding: 22px 17px 18px;
+  background: #102a43;
+  border-right: 1px solid #1e405b;
+  color: #d8e7ee;
+  font-size: 13px;
 }
-.plan-sidebar__header { padding: 0 10px 30px; }
-.plan-sidebar__brand { display: flex; align-items: center; gap: 10px; color: inherit; font-weight: 700; text-decoration: none; }
+.plan-sidebar__header { padding: 2px 7px 24px; }
+.plan-sidebar__brand { display: flex; align-items: center; gap: 9px; margin: 8px 4px 0; color: #75cbd0; font-size: 12px; font-weight: 700; text-decoration: none; }
 .plan-sidebar__brand-mark { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; background: #d8f0e7; color: #123f4b; }
 .plan-sidebar__nav { flex: 1; }
 .plan-sidebar__section-toggle, .plan-sidebar__sign-out { width: 100%; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
@@ -424,7 +427,7 @@ a {
 .plan-sidebar__plans { padding: 4px 0; }
 .plan-sidebar__plan-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .plan-sidebar__plan-row { display: flex; align-items: center; gap: 4px; }
-.plan-sidebar__plan-link, .plan-sidebar__notes-link { display: block; flex: 1; min-width: 0; padding: 10px; border-radius: 8px; color: #d8e8e6; text-decoration: none; }
+.plan-sidebar__plan-link, .plan-sidebar__notes-link { display: block; flex: 1; min-width: 0; padding: 10px; border-radius: 8px; color: #b9cbd5; font-size: 12px; text-decoration: none; }
 .plan-sidebar__plan-link.is-active-view, .plan-sidebar__notes-link.is-active-view { background: #286276; color: #fff; }
 .plan-sidebar__plan-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .plan-sidebar__new-tab, .plan-sidebar__delete { border: 0; background: transparent; color: #9fc0bd; cursor: pointer; }
@@ -438,20 +441,6 @@ a {
 .plan-sidebar__profile-copy { display: grid; min-width: 0; gap: 2px; font-size: 12px; }
 .plan-sidebar__profile-copy span { overflow: hidden; color: #9fc0bd; text-overflow: ellipsis; white-space: nowrap; }
 .plan-sidebar__sign-out { margin-top: 14px; padding: 8px 0; color: #b8d2d0; }
-@media (max-width: 900px) {
-  .planner-shell { display: block; }
-  .plan-sidebar {
-    position: relative;
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    padding: 14px 16px;
-  }
-  .plan-sidebar__header { padding: 0 0 12px; }
-  .plan-sidebar__nav { display: none; }
-  .plan-sidebar__account { display: none; }
-  .planner-page { width: 100%; }
-}
 .topbar {
   height: 76px;
   max-width: 1180px;
