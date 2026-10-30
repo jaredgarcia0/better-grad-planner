@@ -15,6 +15,7 @@ import {
   listTerms,
   logout,
   Program,
+  RequirementSectionId,
   updatePlan,
   updatePlannedCourse,
   User,
@@ -511,6 +512,33 @@ export default function App() {
     );
   }
 
+  async function saveRequirementLayout(layout: RequirementSectionId[]) {
+    if (!activePlan) return;
+    const previousLayout = activePlan.requirementLayout;
+    setPlans((current) =>
+      current.map((plan) =>
+        plan.id === activePlan.id ? { ...plan, requirementLayout: layout } : plan,
+      ),
+    );
+    try {
+      const result = await updatePlan(activePlan.id, { requirementLayout: layout });
+      setPlans((current) =>
+        current.map((plan) => (plan.id === result.data.id ? result.data : plan)),
+      );
+    } catch (error) {
+      setPlans((current) =>
+        current.map((plan) =>
+          plan.id === activePlan.id
+            ? { ...plan, requirementLayout: previousLayout }
+            : plan,
+        ),
+      );
+      setPlannerError(
+        error instanceof Error ? error.message : "Unable to save the plan layout.",
+      );
+    }
+  }
+
   async function handleSignOut() {
     if (
       notesDirtyRef.current &&
@@ -659,7 +687,11 @@ export default function App() {
                   plannedCourseIds={plannedCourseIds}
                   onAdd={(course) => void addCourse(course)}
                 />
-                <RequirementsPanel programId={activePlan.programId} />
+                <RequirementsPanel
+                  programId={activePlan.programId}
+                  layout={activePlan.requirementLayout}
+                  onLayoutChange={(layout) => void saveRequirementLayout(layout)}
+                />
               </div>
             )}
           </main>

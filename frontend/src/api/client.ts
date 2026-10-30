@@ -56,6 +56,7 @@ export type User = {
 };
 
 export type DegreePlanStatus = "DRAFT" | "ARCHIVED" | "DECLARED";
+export type RequirementSectionId = "major" | "general" | "electives";
 
 export type DegreePlan = {
   id: string;
@@ -63,6 +64,7 @@ export type DegreePlan = {
   programId: string;
   name: string;
   notes: string | null;
+  requirementLayout: RequirementSectionId[] | null;
   status: DegreePlanStatus;
   isDefault: boolean;
   createdAt: string;
@@ -78,7 +80,10 @@ export type CreateDegreePlanPayload = {
 };
 
 export type UpdateDegreePlanPayload = Partial<
-  Pick<DegreePlan, "programId" | "name" | "notes" | "status" | "isDefault">
+  Pick<
+    DegreePlan,
+    "programId" | "name" | "notes" | "requirementLayout" | "status" | "isDefault"
+  >
 >;
 
 export type PlannedCourseEntry = {

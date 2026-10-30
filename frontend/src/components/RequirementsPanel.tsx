@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getCourse,
   getProgram,
@@ -6,6 +6,7 @@ import {
   listPrograms,
   listRequirementCourses,
   RequirementGroup,
+  RequirementSectionId,
 } from "../api/client";
 
 type Requirement = { code: string; title: string; credits: number };
@@ -40,15 +41,27 @@ function RequirementGroupView({
 
 type RequirementsPanelProps = {
   programId?: string;
+  layout?: RequirementSectionId[] | null;
+  onLayoutChange?: (layout: RequirementSectionId[]) => void;
 };
 
 export function RequirementsPanel({
   programId,
+  layout,
+  onLayoutChange,
 }: RequirementsPanelProps = {}) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [programName, setProgramName] = useState("Degree requirements");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [draggedSection, setDraggedSection] = useState<RequirementSectionId | null>(null);
+  const [sectionOrder, setSectionOrder] = useState<RequirementSectionId[]>(
+    layout?.length ? layout : ["major", "general", "electives"],
+  );
+
+  useEffect(() => {
+    setSectionOrder(layout?.length ? layout : ["major", "general", "electives"]);
+  }, [layout]);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +133,86 @@ export function RequirementsPanel({
     0,
   );
 
+  const orderedSections = useMemo(() => {
+    const defaults: RequirementSectionId[] = ["major", "general", "electives"];
+    return Array.from(new Set([...sectionOrder, ...defaults])) as RequirementSectionId[];
+  }, [sectionOrder]);
+
+  function moveSection(section: RequirementSectionId, target: RequirementSectionId) {
+    if (section === target) return;
+    const next = [...orderedSections];
+    const fromIndex = next.indexOf(section);
+    const toIndex = next.indexOf(target);
+    next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, section);
+    setSectionOrder(next);
+    onLayoutChange?.(next);
+  }
+
+  function shiftSection(section: RequirementSectionId, direction: -1 | 1) {
+    const index = orderedSections.indexOf(section);
+    const target = orderedSections[index + direction];
+    if (target) moveSection(section, target);
+  }
+
+  function renderSection(section: RequirementSectionId) {
+    const sectionContent = {
+      major: (
+        <>
+          {major.slice(0, 1).map((group) => (
+            <RequirementGroupView key={group.id} title="Major requirements" group={group} />
+          ))}
+          {major.length === 0 && <p className="muted requirement-empty">No major requirements found.</p>}
+        </>
+      ),
+      general: (
+        <>
+          {general.slice(0, 1).map((group) => (
+            <RequirementGroupView key={group.id} title="General education" group={group} />
+          ))}
+          {general.length === 0 && <p className="muted requirement-empty">No general education requirements found.</p>}
+        </>
+      ),
+      electives: (
+        <div className="requirement-group elective-group">
+          <div className="requirement-group-heading">
+            <strong>Electives counting toward degree</strong>
+            <span>{electiveCredits} cr</span>
+          </div>
+          <div className="elective-progress"><i /></div>
+          <p className="muted">Elective options are pulled from the selected program requirements.</p>
+        </div>
+      ),
+    }[section];
+    const titles = { major: "Major requirements", general: "General education", electives: "Electives" };
+    const index = orderedSections.indexOf(section);
+
+    return (
+      <section
+        className={`requirement-layout-section${draggedSection === section ? " is-dragging" : ""}`}
+        key={section}
+        draggable
+        onDragStart={() => setDraggedSection(section)}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={() => {
+          if (draggedSection) moveSection(draggedSection, section);
+          setDraggedSection(null);
+        }}
+        onDragEnd={() => setDraggedSection(null)}
+      >
+        <header className="requirement-layout-section__header">
+          <span className="requirement-drag-handle" aria-hidden="true">⠿</span>
+          <strong>{titles[section]}</strong>
+          <span className="requirement-layout-section__actions">
+            <button type="button" onClick={() => shiftSection(section, -1)} disabled={index === 0} aria-label={`Move ${titles[section]} up`}>↑</button>
+            <button type="button" onClick={() => shiftSection(section, 1)} disabled={index === orderedSections.length - 1} aria-label={`Move ${titles[section]} down`}>↓</button>
+          </span>
+        </header>
+        {sectionContent}
+      </section>
+    );
+  }
+
   return (
     <aside className="card requirements-card">
       <div className="section-heading">
@@ -135,39 +228,10 @@ export function RequirementsPanel({
         <p className="muted">No requirements found for this program.</p>
       )}
       {!loading && !error && groups.length > 0 && (
-        <>
-          <>
-            {major.slice(0, 1).map((group) => (
-              <RequirementGroupView
-                key={group.id}
-                title="Major requirements"
-                group={group}
-              />
-            ))}
-          </>
-          <>
-            {general.slice(0, 1).map((group) => (
-              <RequirementGroupView
-                key={group.id}
-                title="General education"
-                group={group}
-              />
-            ))}
-          </>
-          <div className="requirement-group elective-group">
-            <div className="requirement-group-heading">
-              <strong>Electives counting toward degree</strong>
-              <span>{electiveCredits} cr</span>
-            </div>
-            <div className="elective-progress">
-              <i />
-            </div>
-            <p className="muted">
-              Elective options are pulled from the selected program
-              requirements.
-            </p>
-          </div>
-        </>
+        <div className="requirement-layout" aria-label="Reorderable degree requirement sections">
+          <p className="requirement-layout__hint">Drag sections to arrange your plan</p>
+          {orderedSections.map(renderSection)}
+        </div>
       )}
     </aside>
   );
