@@ -421,7 +421,8 @@ a {
 .plan-sidebar__header { padding: 2px 7px 24px; }
 .plan-sidebar__brand { display: flex; align-items: center; gap: 9px; margin: 8px 4px 0; color: #75cbd0; font-size: 12px; font-weight: 700; text-decoration: none; }
 .plan-sidebar__brand-mark { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; background: #d8f0e7; color: #123f4b; }
-.plan-sidebar__nav { flex: 1; }
+.plan-sidebar__nav { display: block; flex: 1; gap: 0; }
+.plan-sidebar__nav a { padding: 0; }
 .plan-sidebar__section-toggle, .plan-sidebar__sign-out { width: 100%; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .plan-sidebar__section-toggle { display: flex; justify-content: space-between; padding: 10px; color: #b8d2d0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .plan-sidebar__plans { padding: 4px 0; }
