@@ -1410,7 +1410,35 @@ footer {
   align-items: center;
   gap: 8px;
   padding: 9px 0;
+  cursor: pointer;
 }
+.requirement-item:focus-visible {
+  outline: 2px solid #167d9a;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.requirement-item:active { cursor: grabbing; }
+.course-details-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.course-details-list div {
+  padding: 10px;
+  border-radius: 8px;
+  background: #f3f7f8;
+}
+.course-details-list dt {
+  color: #627d98;
+  font-size: 11px;
+}
+.course-details-list dd {
+  margin: 4px 0 0;
+  color: #243b53;
+  font-weight: 700;
+}
+.course-details-description { color: #486581; line-height: 1.55; }
 .requirement-item > div {
   display: grid;
   gap: 2px;

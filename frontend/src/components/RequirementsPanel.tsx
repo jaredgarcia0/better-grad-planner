@@ -1,5 +1,10 @@
-import { useEffect, useId, useMemo, useState } from "react";
-import { getProgramRequirementTree, RequirementNode } from "../api/client";
+import { useEffect, useId, useMemo, useState, type DragEvent } from "react";
+import {
+  Course,
+  getCourse,
+  getProgramRequirementTree,
+  RequirementNode,
+} from "../api/client";
 import { PlanProgram } from "./PlanLibrary";
 
 type ProgramRequirements = { program: PlanProgram; groups: RequirementNode[] };
@@ -28,15 +33,22 @@ function groupCourseCount(group: RequirementNode): number {
   );
 }
 
+function startCourseDrag(event: DragEvent<HTMLElement>, course: Course) {
+  event.dataTransfer.effectAllowed = "copy";
+  event.dataTransfer.setData("application/bgp-course", JSON.stringify(course));
+}
+
 function RequirementGroupView({
   group,
   expandedGroupIds,
   onToggle,
+  onSelectCourse,
   level = 0,
 }: {
   group: RequirementNode;
   expandedGroupIds: Set<string>;
   onToggle: (id: string) => void;
+  onSelectCourse: (course: Course) => void;
   level?: number;
 }) {
   const isExpanded = expandedGroupIds.has(group.id);
@@ -74,7 +86,22 @@ function RequirementGroupView({
             <p className="requirement-group-description">{group.description}</p>
           )}
           {group.courses.map(({ id, course, creditsOverride, minGrade }) => (
-            <div className="requirement-item" key={id}>
+            <div
+              className="requirement-item"
+              key={id}
+              draggable
+              role="button"
+              tabIndex={0}
+              aria-label={`View details for ${course.code}`}
+              onClick={() => onSelectCourse(course)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelectCourse(course);
+                }
+              }}
+              onDragStart={(event) => startCourseDrag(event, course)}
+            >
               <span className="status-dot open" aria-label="Not yet planned" />
               <div>
                 <strong>{course.code}</strong>
@@ -90,6 +117,7 @@ function RequirementGroupView({
               group={child}
               expandedGroupIds={expandedGroupIds}
               onToggle={onToggle}
+              onSelectCourse={onSelectCourse}
               level={level + 1}
             />
           ))}
@@ -121,6 +149,9 @@ export function RequirementsPanel({ programs }: { programs: PlanProgram[] }) {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [courseDetails, setCourseDetails] = useState<Course | null>(null);
+  const [courseDetailsLoading, setCourseDetailsLoading] = useState(false);
   const programKey = programs
     .map(({ program, role }) => `${program.id}:${role}`)
     .join(",");
@@ -169,6 +200,30 @@ export function RequirementsPanel({ programs }: { programs: PlanProgram[] }) {
       cancelled = true;
     };
   }, [programKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!selectedCourse) {
+      setCourseDetails(null);
+      setCourseDetailsLoading(false);
+      return undefined;
+    }
+    setCourseDetails(selectedCourse);
+    setCourseDetailsLoading(true);
+    getCourse(selectedCourse.id)
+      .then((result) => {
+        if (!cancelled) setCourseDetails(result.data);
+      })
+      .catch(() => {
+        // The requirement's embedded course summary remains useful offline.
+      })
+      .finally(() => {
+        if (!cancelled) setCourseDetailsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCourse]);
 
   const selectedGroups = useMemo(
     () => activeRequirements?.groups ?? [],
@@ -243,6 +298,7 @@ export function RequirementsPanel({ programs }: { programs: PlanProgram[] }) {
                 group={group}
                 expandedGroupIds={expandedGroupIds}
                 onToggle={toggleGroup}
+                onSelectCourse={setSelectedCourse}
               />
             ))
           ) : (
@@ -250,6 +306,69 @@ export function RequirementsPanel({ programs }: { programs: PlanProgram[] }) {
               No requirements found for this program.
             </p>
           )}
+        </div>
+      )}
+      {selectedCourse && (
+        <div className="placement-overlay" role="presentation">
+          <div
+            className="placement-dialog course-details-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="course-details-title"
+          >
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Course information</p>
+                <h2 id="course-details-title">
+                  {courseDetails?.code ?? selectedCourse.code}
+                </h2>
+              </div>
+              <button
+                className="dialog-close"
+                type="button"
+                aria-label="Close course information"
+                onClick={() => setSelectedCourse(null)}
+              >
+                ×
+              </button>
+            </div>
+            <p className="placement-course">
+              <strong>{courseDetails?.title ?? selectedCourse.title}</strong>
+            </p>
+            <dl className="course-details-list">
+              <div>
+                <dt>Credits</dt>
+                <dd>{courseDetails?.credits ?? selectedCourse.credits}</dd>
+              </div>
+              {courseDetails?.department?.name && (
+                <div>
+                  <dt>Department</dt>
+                  <dd>{courseDetails.department.name}</dd>
+                </div>
+              )}
+              {courseDetails?.level && (
+                <div>
+                  <dt>Level</dt>
+                  <dd>{courseDetails.level}</dd>
+                </div>
+              )}
+            </dl>
+            {courseDetailsLoading && <p className="muted">Loading details…</p>}
+            {courseDetails?.description && (
+              <p className="course-details-description">
+                {courseDetails.description}
+              </p>
+            )}
+            <div className="placement-actions">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => setSelectedCourse(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </aside>

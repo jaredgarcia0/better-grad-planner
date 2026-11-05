@@ -516,6 +516,7 @@ export default function App() {
               courses={activePlan.courses}
               onRemove={removeCourse}
               onMove={moveCourse}
+              onPlace={placeCourse}
               startTerm={activePlan.startTerm}
               endTerm={activePlan.endTerm}
               prerequisiteIssues={prerequisiteIssues}

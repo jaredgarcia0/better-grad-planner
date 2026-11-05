@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent as ReactDragEvent } from "react";
 import { Course } from "../api/client";
 import {
   plannerYears,
@@ -11,13 +11,17 @@ type PlanBoardProps = {
   courses: PlannedCourse[];
   onRemove: (courseId: string) => void;
   onMove: (courseId: string, termId: string) => void;
+  onPlace: (course: Course, termId: string) => void;
   startTerm: string;
   endTerm: string;
   prerequisiteIssues: Record<string, string[]>;
   onShowPrerequisiteIssue: (course: PlannedCourse) => void;
 };
 
-function readDraggedCourse(event: DragEvent<HTMLElement>): Course | null {
+const EDGE_SCROLL_ZONE = 160;
+const MAX_EDGE_SCROLL_SPEED = 24;
+
+function readDraggedCourse(event: ReactDragEvent<HTMLElement>): Course | null {
   const payload = event.dataTransfer.getData("application/bgp-course");
   if (!payload) return null;
   try {
@@ -31,11 +35,78 @@ export function PlanBoard({
   courses,
   onRemove,
   onMove,
+  onPlace,
   startTerm,
   endTerm,
   prerequisiteIssues,
   onShowPrerequisiteIssue,
 }: PlanBoardProps) {
+  const edgeScrollFrame = useRef<number | null>(null);
+  const edgeScrollDirection = useRef(0);
+  const edgeScrollSpeed = useRef(0);
+
+  useEffect(() => {
+    function stopEdgeScroll() {
+      edgeScrollDirection.current = 0;
+      if (edgeScrollFrame.current !== null) {
+        window.cancelAnimationFrame(edgeScrollFrame.current);
+        edgeScrollFrame.current = null;
+      }
+    }
+
+    function scrollAtEdge() {
+      if (!edgeScrollDirection.current) {
+        edgeScrollFrame.current = null;
+        return;
+      }
+      window.scrollBy(0, edgeScrollDirection.current * edgeScrollSpeed.current);
+      edgeScrollFrame.current = window.requestAnimationFrame(scrollAtEdge);
+    }
+
+    function handleDragOver(event: DragEvent) {
+      if (!Array.from(event.dataTransfer?.types ?? []).includes("application/bgp-course")) {
+        stopEdgeScroll();
+        return;
+      }
+
+      const distanceFromTop = event.clientY;
+      const distanceFromBottom = window.innerHeight - event.clientY;
+      let direction = 0;
+      let distanceIntoZone = 0;
+      if (distanceFromTop < EDGE_SCROLL_ZONE) {
+        direction = -1;
+        distanceIntoZone = EDGE_SCROLL_ZONE - distanceFromTop;
+      } else if (distanceFromBottom < EDGE_SCROLL_ZONE) {
+        direction = 1;
+        distanceIntoZone = EDGE_SCROLL_ZONE - distanceFromBottom;
+      }
+
+      if (!direction) {
+        stopEdgeScroll();
+        return;
+      }
+
+      edgeScrollDirection.current = direction;
+      edgeScrollSpeed.current = Math.max(
+        4,
+        Math.ceil((distanceIntoZone / EDGE_SCROLL_ZONE) * MAX_EDGE_SCROLL_SPEED),
+      );
+      if (edgeScrollFrame.current === null) {
+        edgeScrollFrame.current = window.requestAnimationFrame(scrollAtEdge);
+      }
+    }
+
+    document.addEventListener("dragover", handleDragOver);
+    document.addEventListener("drop", stopEdgeScroll);
+    document.addEventListener("dragend", stopEdgeScroll);
+    return () => {
+      document.removeEventListener("dragover", handleDragOver);
+      document.removeEventListener("drop", stopEdgeScroll);
+      document.removeEventListener("dragend", stopEdgeScroll);
+      stopEdgeScroll();
+    };
+  }, []);
+
   const allTerms = listPlanTerms();
   const startIndex = startTerm
     ? Math.max(
@@ -126,7 +197,7 @@ export function PlanBoard({
                       onDrop={(event) => {
                         event.preventDefault();
                         const course = readDraggedCourse(event);
-                        if (course) onMove(course.id, term.id);
+                        if (course) onPlace(course, term.id);
                       }}
                     >
                       <div className="term-heading">
