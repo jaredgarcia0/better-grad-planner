@@ -8,6 +8,7 @@ import {
   User,
 } from "./api/client";
 import { CourseSearch } from "./components/CourseSearch";
+import { CourseDetailsModal } from "./components/CourseDetailsModal";
 import {
   GraduationPlan,
   getPlanPrograms,
@@ -59,6 +60,8 @@ export default function App() {
     Record<string, string[]>
   >({});
   const [issueCourse, setIssueCourse] = useState<PlannedCourse | null>(null);
+  const [plannedCourseDetails, setPlannedCourseDetails] =
+    useState<PlannedCourse | null>(null);
 
   useEffect(() => {
     getCurrentUser()
@@ -366,6 +369,7 @@ export default function App() {
       setEditingPlan(null);
       setCourseToPlace(null);
       setIssueCourse(null);
+      setPlannedCourseDetails(null);
       setPrerequisiteIssues({});
     }
   }
@@ -521,6 +525,7 @@ export default function App() {
               endTerm={activePlan.endTerm}
               prerequisiteIssues={prerequisiteIssues}
               onShowPrerequisiteIssue={setIssueCourse}
+              onShowCourseDetails={setPlannedCourseDetails}
             />
             <div className="content-grid" id="courses">
               <CourseSearch
@@ -529,6 +534,7 @@ export default function App() {
               />
               <RequirementsPanel
                 programs={activePrograms}
+                onPlanCourse={requestCoursePlacement}
               />
             </div>
           </>
@@ -658,6 +664,14 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {plannedCourseDetails && (
+        <CourseDetailsModal
+          course={plannedCourseDetails}
+          plannedTermLabel={getTermLabel(plannedCourseDetails.termId)}
+          onClose={() => setPlannedCourseDetails(null)}
+        />
       )}
 
       <footer>

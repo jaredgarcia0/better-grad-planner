@@ -16,6 +16,7 @@ type PlanBoardProps = {
   endTerm: string;
   prerequisiteIssues: Record<string, string[]>;
   onShowPrerequisiteIssue: (course: PlannedCourse) => void;
+  onShowCourseDetails: (course: PlannedCourse) => void;
 };
 
 const EDGE_SCROLL_ZONE = 160;
@@ -40,6 +41,7 @@ export function PlanBoard({
   endTerm,
   prerequisiteIssues,
   onShowPrerequisiteIssue,
+  onShowCourseDetails,
 }: PlanBoardProps) {
   const edgeScrollFrame = useRef<number | null>(null);
   const edgeScrollDirection = useRef(0);
@@ -216,18 +218,15 @@ export function PlanBoard({
                               className={`planned-course${hasIssue ? " has-prerequisite-issue" : ""}`}
                               key={course.id}
                               draggable
-                              role={hasIssue ? "button" : undefined}
-                              tabIndex={hasIssue ? 0 : undefined}
-                              onClick={() => {
-                                if (hasIssue) onShowPrerequisiteIssue(course);
-                              }}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => onShowCourseDetails(course)}
                               onKeyDown={(event) => {
                                 if (
-                                  hasIssue &&
                                   (event.key === "Enter" || event.key === " ")
                                 ) {
                                   event.preventDefault();
-                                  onShowPrerequisiteIssue(course);
+                                  onShowCourseDetails(course);
                                 }
                               }}
                               onDragStart={(event) => {
@@ -243,12 +242,17 @@ export function PlanBoard({
                                 <span>{course.title}</span>
                               </div>
                               {hasIssue ? (
-                                <span
+                                <button
+                                  type="button"
                                   className="prerequisite-warning"
-                                  aria-hidden="true"
+                                  aria-label={`View prerequisite issue for ${course.code}`}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    onShowPrerequisiteIssue(course);
+                                  }}
                                 >
                                   !
-                                </span>
+                                </button>
                               ) : null}
                               <select
                                 className="planned-course-term"

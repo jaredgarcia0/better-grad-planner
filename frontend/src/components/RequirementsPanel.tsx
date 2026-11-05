@@ -1,13 +1,18 @@
 import { useEffect, useId, useMemo, useState, type DragEvent } from "react";
 import {
   Course,
-  getCourse,
   getProgramRequirementTree,
   RequirementNode,
 } from "../api/client";
+import { CourseDetailsModal } from "./CourseDetailsModal";
 import { PlanProgram } from "./PlanLibrary";
 
 type ProgramRequirements = { program: PlanProgram; groups: RequirementNode[] };
+type CourseSelection = {
+  course: Course;
+  creditsOverride?: number | null;
+  minGrade?: string | null;
+};
 
 function roleLabel(role: PlanProgram["role"]) {
   return role[0] + role.slice(1).toLowerCase();
@@ -48,7 +53,11 @@ function RequirementGroupView({
   group: RequirementNode;
   expandedGroupIds: Set<string>;
   onToggle: (id: string) => void;
-  onSelectCourse: (course: Course) => void;
+  onSelectCourse: (
+    course: Course,
+    creditsOverride?: number | null,
+    minGrade?: string | null,
+  ) => void;
   level?: number;
 }) {
   const isExpanded = expandedGroupIds.has(group.id);
@@ -93,11 +102,11 @@ function RequirementGroupView({
               role="button"
               tabIndex={0}
               aria-label={`View details for ${course.code}`}
-              onClick={() => onSelectCourse(course)}
+              onClick={() => onSelectCourse(course, creditsOverride, minGrade)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  onSelectCourse(course);
+                  onSelectCourse(course, creditsOverride, minGrade);
                 }
               }}
               onDragStart={(event) => startCourseDrag(event, course)}
@@ -139,7 +148,13 @@ async function loadProgramRequirements(
   return { program, groups: result.data };
 }
 
-export function RequirementsPanel({ programs }: { programs: PlanProgram[] }) {
+export function RequirementsPanel({
+  programs,
+  onPlanCourse,
+}: {
+  programs: PlanProgram[];
+  onPlanCourse: (course: Course) => void;
+}) {
   const [programRequirements, setProgramRequirements] = useState<
     ProgramRequirements[]
   >([]);
@@ -149,9 +164,9 @@ export function RequirementsPanel({ programs }: { programs: PlanProgram[] }) {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [courseDetails, setCourseDetails] = useState<Course | null>(null);
-  const [courseDetailsLoading, setCourseDetailsLoading] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<CourseSelection | null>(
+    null,
+  );
   const programKey = programs
     .map(({ program, role }) => `${program.id}:${role}`)
     .join(",");
@@ -200,30 +215,6 @@ export function RequirementsPanel({ programs }: { programs: PlanProgram[] }) {
       cancelled = true;
     };
   }, [programKey]);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!selectedCourse) {
-      setCourseDetails(null);
-      setCourseDetailsLoading(false);
-      return undefined;
-    }
-    setCourseDetails(selectedCourse);
-    setCourseDetailsLoading(true);
-    getCourse(selectedCourse.id)
-      .then((result) => {
-        if (!cancelled) setCourseDetails(result.data);
-      })
-      .catch(() => {
-        // The requirement's embedded course summary remains useful offline.
-      })
-      .finally(() => {
-        if (!cancelled) setCourseDetailsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedCourse]);
 
   const selectedGroups = useMemo(
     () => activeRequirements?.groups ?? [],
@@ -298,7 +289,9 @@ export function RequirementsPanel({ programs }: { programs: PlanProgram[] }) {
                 group={group}
                 expandedGroupIds={expandedGroupIds}
                 onToggle={toggleGroup}
-                onSelectCourse={setSelectedCourse}
+                onSelectCourse={(course, creditsOverride, minGrade) =>
+                  setSelectedCourse({ course, creditsOverride, minGrade })
+                }
               />
             ))
           ) : (
@@ -309,67 +302,16 @@ export function RequirementsPanel({ programs }: { programs: PlanProgram[] }) {
         </div>
       )}
       {selectedCourse && (
-        <div className="placement-overlay" role="presentation">
-          <div
-            className="placement-dialog course-details-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="course-details-title"
-          >
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Course information</p>
-                <h2 id="course-details-title">
-                  {courseDetails?.code ?? selectedCourse.code}
-                </h2>
-              </div>
-              <button
-                className="dialog-close"
-                type="button"
-                aria-label="Close course information"
-                onClick={() => setSelectedCourse(null)}
-              >
-                ×
-              </button>
-            </div>
-            <p className="placement-course">
-              <strong>{courseDetails?.title ?? selectedCourse.title}</strong>
-            </p>
-            <dl className="course-details-list">
-              <div>
-                <dt>Credits</dt>
-                <dd>{courseDetails?.credits ?? selectedCourse.credits}</dd>
-              </div>
-              {courseDetails?.department?.name && (
-                <div>
-                  <dt>Department</dt>
-                  <dd>{courseDetails.department.name}</dd>
-                </div>
-              )}
-              {courseDetails?.level && (
-                <div>
-                  <dt>Level</dt>
-                  <dd>{courseDetails.level}</dd>
-                </div>
-              )}
-            </dl>
-            {courseDetailsLoading && <p className="muted">Loading details…</p>}
-            {courseDetails?.description && (
-              <p className="course-details-description">
-                {courseDetails.description}
-              </p>
-            )}
-            <div className="placement-actions">
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => setSelectedCourse(null)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <CourseDetailsModal
+          course={selectedCourse.course}
+          creditsOverride={selectedCourse.creditsOverride}
+          minGrade={selectedCourse.minGrade}
+          onClose={() => setSelectedCourse(null)}
+          onPlan={(course) => {
+            setSelectedCourse(null);
+            onPlanCourse(course);
+          }}
+        />
       )}
     </aside>
   );
