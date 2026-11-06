@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Course,
   getCourse,
@@ -12,7 +12,6 @@ import { CourseDetailsModal } from "./components/CourseDetailsModal";
 import {
   GraduationPlan,
   getPlanPrograms,
-  normalizeGraduationPlan,
   PlanLibrary,
   PlanSetup,
 } from "./components/PlanLibrary";
@@ -22,25 +21,10 @@ import { PlanSidebar } from "./components/PlanSidebar";
 import { RequirementsPanel } from "./components/RequirementsPanel";
 import { SignIn } from "./components/SignIn";
 import { getTermLabel, listPlanTerms, plannerYears } from "./plannerTerms";
-
-function savedPlansKey(workspaceId: string) {
-  return `better-grad-planner:${workspaceId}:plans`;
-}
-
-function loadPlans(workspaceId: string): GraduationPlan[] {
-  try {
-    const saved = localStorage.getItem(savedPlansKey(workspaceId));
-    if (!saved) return [];
-    const parsed = JSON.parse(saved) as unknown;
-    return Array.isArray(parsed)
-      ? parsed
-          .map((plan) => normalizeGraduationPlan(plan as GraduationPlan))
-          .filter((plan): plan is GraduationPlan => plan !== null)
-      : [];
-  } catch {
-    return [];
-  }
-}
+import { Dashboard } from "./components/Dashboard";
+import { normalizeDashboardLayout, type DashboardWidgetType } from "./dashboardLayout";
+import { usePlanWorkspace } from "./usePlanWorkspace";
+import "./workspace.css";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -48,8 +32,11 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const [plans, setPlans] = useState<GraduationPlan[]>([]);
-  const [plansWorkspace, setPlansWorkspace] = useState<string | null>(null);
+  const notesDirty = useRef(false);
+  const onNotesDirtyChange = useCallback((dirty: boolean) => { notesDirty.current = dirty; }, []);
+  const workspaceId = user ? `user-${user.id}` : guestMode ? "guest" : null;
+  const workspace = usePlanWorkspace(workspaceId, Boolean(user));
+  const { plans } = workspace;
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [notesPlanId, setNotesPlanId] = useState<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
@@ -59,6 +46,7 @@ export default function App() {
   const [prerequisiteIssues, setPrerequisiteIssues] = useState<
     Record<string, string[]>
   >({});
+  const [prerequisiteStatus, setPrerequisiteStatus] = useState<"loading" | "ready" | "error">("ready");
   const [issueCourse, setIssueCourse] = useState<PlannedCourse | null>(null);
   const [plannedCourseDetails, setPlannedCourseDetails] =
     useState<PlannedCourse | null>(null);
@@ -83,25 +71,11 @@ export default function App() {
     return () => document.removeEventListener("mousedown", closeProfileMenu);
   }, []);
 
-  const workspaceId = user ? `user-${user.id}` : guestMode ? "guest" : null;
-
   useEffect(() => {
-    if (authLoading || !workspaceId) return;
-    setPlans(loadPlans(workspaceId));
-    setPlansWorkspace(workspaceId);
     setSelectedPlanId(null);
     setSetupOpen(false);
     setEditingPlan(null);
-  }, [authLoading, workspaceId]);
-
-  useEffect(() => {
-    if (!workspaceId || plansWorkspace !== workspaceId) return;
-    try {
-      localStorage.setItem(savedPlansKey(workspaceId), JSON.stringify(plans));
-    } catch {
-      // Keep the current session usable when browser storage is unavailable.
-    }
-  }, [plans, plansWorkspace, workspaceId]);
+  }, [workspaceId]);
 
   const activePlan = plans.find((plan) => plan.id === selectedPlanId) ?? null;
 
@@ -240,19 +214,22 @@ export default function App() {
         }
       }
       setPrerequisiteIssues(Object.fromEntries(issueMap));
+      setPrerequisiteStatus("ready");
     }
 
     if (!activePlan || plannedCourses.length === 0) {
       setPrerequisiteIssues({});
+      setPrerequisiteStatus("ready");
     } else {
+      setPrerequisiteStatus("loading");
       void checkPrerequisites().catch(() => {
-        if (!cancelled) setPrerequisiteIssues({});
+        if (!cancelled) { setPrerequisiteIssues({}); setPrerequisiteStatus("error"); }
       });
     }
     return () => {
       cancelled = true;
     };
-  }, [activePlan]);
+  }, [activePlan?.id, activePlan?.courses]);
 
   if (authLoading)
     return (
@@ -294,13 +271,8 @@ export default function App() {
     }))
     .filter((year) => year.terms.length > 0);
 
-  function handleSavePlan(plan: GraduationPlan) {
-    setPlans((current) => {
-      const existing = current.some((item) => item.id === plan.id);
-      return existing
-        ? current.map((item) => (item.id === plan.id ? plan : item))
-        : [...current, plan];
-    });
+  async function handleSavePlan(plan: GraduationPlan) {
+    await workspace.savePlan(plan);
     setSelectedPlanId(plan.id);
     setNotesPlanId(null);
     setSetupOpen(false);
@@ -311,13 +283,7 @@ export default function App() {
     update: (courses: GraduationPlan["courses"]) => GraduationPlan["courses"],
   ) {
     if (!activePlan) return;
-    setPlans((current) =>
-      current.map((plan) =>
-        plan.id === activePlan.id
-          ? { ...plan, courses: update(plan.courses) }
-          : plan,
-      ),
-    );
+    void workspace.updatePlan(activePlan.id, (plan) => ({ ...plan, courses: update(plan.courses) })).catch(() => undefined);
   }
 
   function requestCoursePlacement(course: Course) {
@@ -355,14 +321,13 @@ export default function App() {
   }
 
   async function handleSignOut() {
+    if (!canNavigate()) return;
     try {
       if (user) await logout();
     } finally {
       setProfileOpen(false);
       setUser(null);
       setGuestMode(false);
-      setPlans([]);
-      setPlansWorkspace(null);
       setSelectedPlanId(null);
       setNotesPlanId(null);
       setSetupOpen(false);
@@ -376,7 +341,68 @@ export default function App() {
 
   const activePrograms = activePlan ? getPlanPrograms(activePlan) : [];
 
+  function canNavigate() {
+    if (!window.dispatchEvent(new Event("dashboard:before-navigate", { cancelable: true }))) return false;
+    if (notesDirty.current && !window.confirm("Discard unsaved notes?")) return false;
+    return !workspace.isSaving || window.confirm("Changes are still saving. Leave this page?");
+  }
+
+  async function handleDeletePlan(planId: string) {
+    if (!canNavigate()) return;
+    try {
+      await workspace.deletePlan(planId);
+      if (selectedPlanId === planId) setSelectedPlanId(null);
+    } catch { /* The workspace banner reports storage errors. */ }
+  }
+
+  function renderDashboardWidget(widget: DashboardWidgetType) {
+    if (!activePlan) return null;
+    switch (widget) {
+      case "planner": {
+        const unassigned = activePlan.courses.filter((course) => !availablePlanTermIds.has(course.termId));
+        return <>
+          {unassigned.length > 0 && <section className="dashboard-summary">
+            <h2>Unscheduled courses</h2>
+            <p className="muted">These courses need a semester within this plan’s range.</p>
+            {unassigned.map((course) => <label className="dashboard-unassigned" key={course.id}>
+              <span>{course.code} · {course.title}</span>
+              <select aria-label={`Schedule ${course.code}`} value="" onChange={(event) => moveCourse(course.id, event.target.value)}>
+                <option value="" disabled>Choose a semester</option>
+                {planTerms.filter((term) => availablePlanTermIds.has(term.id)).map((term) => <option key={term.id} value={term.id}>{term.label}</option>)}
+              </select>
+            </label>)}
+          </section>}
+          <PlanBoard courses={activePlan.courses} onRemove={removeCourse} onMove={moveCourse} onPlace={placeCourse}
+            startTerm={activePlan.startTerm} endTerm={activePlan.endTerm} prerequisiteIssues={prerequisiteIssues}
+            onShowPrerequisiteIssue={setIssueCourse} onShowCourseDetails={setPlannedCourseDetails} />
+        </>;
+      }
+      case "course-search": return <CourseSearch plannedCourseIds={plannedCourseIds} onAdd={requestCoursePlacement} />;
+      case "requirements": return <RequirementsPanel programs={activePrograms} onPlanCourse={requestCoursePlacement} />;
+      case "notes": return <section className="dashboard-summary">
+        <p className="eyebrow">YOUR REMINDERS</p><h2>Plan notes</h2>
+        <p className="dashboard-note-preview">{activePlan.notes || "Keep reminders, advising decisions, and useful links with this plan."}</p>
+        <button className="secondary-button" type="button" onClick={() => { if (canNavigate()) setNotesPlanId(activePlan.id); }}>Edit notes</button>
+      </section>;
+      case "progress": return <section className="dashboard-summary">
+        <p className="eyebrow">YOUR ROADMAP AT A GLANCE</p><h2>Credit summary</h2>
+        <p className="dashboard-credit-total">{activePlan.courses.reduce((total, course) => total + course.credits, 0)} <span>planned credits</span></p>
+        <p>{activePlan.courses.length} courses across {new Set(activePlan.courses.map((course) => course.termId).filter(Boolean)).size} semesters.</p>
+        {activePlan.major.totalCredits != null && <p className="muted">{activePlan.major.name}: {activePlan.major.totalCredits} required credits. Planned credits do not indicate completed degree requirements.</p>}
+      </section>;
+      case "prerequisites": return <section className="dashboard-summary">
+        <p className="eyebrow">CHECK YOUR SEQUENCE</p><h2>Prerequisite warnings</h2>
+        <p className="muted">Based on courses in this plan; completed and transfer coursework are not included.</p>
+        {prerequisiteStatus === "loading" ? <p role="status">Checking prerequisites…</p> : prerequisiteStatus === "error" ? <p role="alert">Prerequisites could not be checked. Try reopening the plan.</p> : Object.keys(prerequisiteIssues).length ? <ul className="dashboard-warning-list">{activePlan.courses.filter((course) => prerequisiteIssues[course.id]?.length).map((course) => <li key={course.id}>
+          <button type="button" className="text-button" onClick={() => setIssueCourse(course)}>{course.code}</button>
+          <p>{prerequisiteIssues[course.id][0]}</p>
+        </li>)}</ul> : <p>No prerequisite warnings found in this plan.</p>}
+      </section>;
+    }
+  }
+
   function handleSidebarNavigate(href: string) {
+    if (!canNavigate()) return;
     const planId = href.match(/^\/plans\/([^/]+)/)?.[1];
     const isNotes = /\/notes\/?$/.test(href);
     setSetupOpen(false);
@@ -395,13 +421,11 @@ export default function App() {
           user={user ?? { email: "Guest student" }}
           onNavigate={handleSidebarNavigate}
           onCreatePlan={() => {
+            if (!canNavigate()) return;
             setEditingPlan(null);
             setSetupOpen(true);
           }}
-          onDeletePlan={(plan) => {
-            setPlans((current) => current.filter((item) => item.id !== plan.id));
-            if (selectedPlanId === plan.id) setSelectedPlanId(null);
-          }}
+          onDeletePlan={(plan) => { void handleDeletePlan(plan.id); }}
           onSignOut={handleSignOut}
         />
         <div className="planner-page">
@@ -414,7 +438,7 @@ export default function App() {
           <button
             className="header-plans-link"
             type="button"
-            onClick={() => setSelectedPlanId(null)}
+            onClick={() => { if (canNavigate()) setSelectedPlanId(null); }}
           >
             ← All plans
           </button>
@@ -450,7 +474,20 @@ export default function App() {
       </header>
 
       <main>
-        {setupOpen ? (
+        {workspace.saveError && <div className="workspace-banner workspace-banner--error" role="alert">
+          <p>Changes could not be saved. {workspace.saveError} Your previous saved plan is still available; retry the action to save your changes.</p>
+          <button className="secondary-button" type="button" onClick={workspace.dismissSaveError}>Dismiss</button>
+        </div>}
+        {workspace.isSaving && <p className="workspace-save-status" role="status">Saving changes…</p>}
+        {workspace.localPlanCount > 0 && <div className="workspace-banner" role="status">
+          <p>{workspace.localPlanCount} plan{workspace.localPlanCount === 1 ? " is" : "s are"} saved in this browser. Import them to access them from your account on other devices.</p>
+          <button className="secondary-button" type="button" disabled={workspace.isSaving} onClick={() => { void workspace.importLocalPlans().catch(() => undefined); }}>Import browser plans</button>
+        </div>}
+        {workspace.loading ? <p className="workspace-loading" role="status">Loading your plans…</p>
+        : workspace.loadError ? <section className="workspace-banner workspace-banner--error" role="alert">
+          <p>Your plans could not be loaded. {workspace.loadError}</p>
+          <button className="secondary-button" type="button" onClick={workspace.reload}>Try again</button>
+        </section> : setupOpen ? (
           <PlanSetup
             key={editingPlan?.id ?? "new-plan"}
             initialPlan={editingPlan}
@@ -464,12 +501,10 @@ export default function App() {
           <PlanNotes
             plan={activePlan}
             onSave={async (notes) => {
-              setPlans((current) => current.map((plan) =>
-                plan.id === activePlan.id ? { ...plan, notes } : plan,
-              ));
+              await workspace.updatePlan(activePlan.id, (plan) => ({ ...plan, notes }));
             }}
-            onBack={() => setNotesPlanId(null)}
-            onDirtyChange={() => undefined}
+            onBack={() => { if (canNavigate()) setNotesPlanId(null); }}
+            onDirtyChange={onNotesDirtyChange}
           />
         ) : activePlan ? (
           <>
@@ -509,6 +544,7 @@ export default function App() {
                 className="secondary-button edit-plan-button"
                 type="button"
                 onClick={() => {
+                  if (!canNavigate()) return;
                   setEditingPlan(activePlan);
                   setSetupOpen(true);
                 }}
@@ -516,45 +552,26 @@ export default function App() {
                 Edit plan details
               </button>
             </section>
-            <PlanBoard
-              courses={activePlan.courses}
-              onRemove={removeCourse}
-              onMove={moveCourse}
-              onPlace={placeCourse}
-              startTerm={activePlan.startTerm}
-              endTerm={activePlan.endTerm}
-              prerequisiteIssues={prerequisiteIssues}
-              onShowPrerequisiteIssue={setIssueCourse}
-              onShowCourseDetails={setPlannedCourseDetails}
-            />
-            <div className="content-grid" id="courses">
-              <CourseSearch
-                plannedCourseIds={plannedCourseIds}
-                onAdd={requestCoursePlacement}
-              />
-              <RequirementsPanel
-                programs={activePrograms}
-                onPlanCourse={requestCoursePlacement}
-              />
-            </div>
+            <Dashboard key={activePlan.id} planId={activePlan.id}
+              layout={normalizeDashboardLayout(activePlan.dashboardLayout)}
+              onSave={async (dashboardLayout) => { await workspace.updatePlan(activePlan.id, (plan) => ({ ...plan, dashboardLayout })); }}
+              renderWidget={renderDashboardWidget} />
           </>
         ) : (
           <PlanLibrary
             plans={plans}
-            onOpen={setSelectedPlanId}
+            onOpen={(id) => { if (canNavigate()) setSelectedPlanId(id); }}
             onCreate={() => {
+              if (!canNavigate()) return;
               setEditingPlan(null);
               setSetupOpen(true);
             }}
             onEdit={(plan) => {
+              if (!canNavigate()) return;
               setEditingPlan(plan);
               setSetupOpen(true);
             }}
-            onDelete={(planId) => {
-              setPlans((current) =>
-                current.filter((plan) => plan.id !== planId),
-              );
-            }}
+            onDelete={(planId) => { void handleDeletePlan(planId); }}
           />
         )}
       </main>

@@ -1,3 +1,5 @@
+import type { DashboardLayout } from "../dashboardLayout";
+
 export type Pagination = {
   page: number;
   pageSize: number;
@@ -80,13 +82,23 @@ export type DegreePlan = {
   name: string;
   notes: string | null;
   requirementLayout: RequirementSectionId[] | null;
+  dashboardLayout: DashboardLayout | null;
+  programs: { programId: string; role: "MAJOR" | "MINOR" | "CERTIFICATE" }[] | null;
+  startTerm: string | null;
+  endTerm: string | null;
+  program: Program;
+  courses: {
+    course: Course;
+    termKey: string | null;
+    term?: { name?: string; startDate?: string } | null;
+  }[];
   status: "DRAFT" | "ARCHIVED" | "DECLARED";
   isDefault: boolean;
   createdAt: string;
   updatedAt: string;
 };
 
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "";
+const apiBaseUrl = import.meta.env?.VITE_API_URL ?? "";
 
 export async function apiRequest<T>(
   path: string,
@@ -208,4 +220,35 @@ export function listCoursePrerequisites(courseId: string) {
   return apiRequest<ApiList<CoursePrerequisite>>(
     `/api/courses/${courseId}/prerequisites?pageSize=100`,
   );
+}
+
+export function getProgram(programId: string) {
+  return apiRequest<{ data: Program }>(`/api/programs/${programId}`);
+}
+
+export function listDegreePlans(page = 1) {
+  return apiRequest<ApiList<DegreePlan>>(`/api/plans?pageSize=100&page=${page}`);
+}
+
+export type PlanWorkspaceInput = {
+  name: string;
+  programId: string;
+  programs: NonNullable<DegreePlan["programs"]>;
+  startTerm: string;
+  endTerm: string;
+  notes: string;
+  requirementLayout?: RequirementSectionId[];
+  dashboardLayout: DashboardLayout;
+  courses: { courseId: string; termKey: string }[];
+};
+
+export function saveDegreePlanWorkspace(planId: string, input: PlanWorkspaceInput) {
+  return apiRequest<{ data: DegreePlan }>(`/api/plans/${planId}/workspace`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteDegreePlan(planId: string) {
+  return apiRequest<void>(`/api/plans/${planId}`, { method: "DELETE" });
 }
