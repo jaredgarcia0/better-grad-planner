@@ -5,13 +5,14 @@ import {
   getCurrentUser,
   listCoursePrerequisites,
   logout,
-  Program,
-  RequirementSectionId,
   User,
 } from "./api/client";
 import { CourseSearch } from "./components/CourseSearch";
+import { CourseDetailsModal } from "./components/CourseDetailsModal";
 import {
   GraduationPlan,
+  getPlanPrograms,
+  normalizeGraduationPlan,
   PlanLibrary,
   PlanSetup,
 } from "./components/PlanLibrary";
@@ -31,7 +32,11 @@ function loadPlans(workspaceId: string): GraduationPlan[] {
     const saved = localStorage.getItem(savedPlansKey(workspaceId));
     if (!saved) return [];
     const parsed = JSON.parse(saved) as unknown;
-    return Array.isArray(parsed) ? (parsed as GraduationPlan[]) : [];
+    return Array.isArray(parsed)
+      ? parsed
+          .map((plan) => normalizeGraduationPlan(plan as GraduationPlan))
+          .filter((plan): plan is GraduationPlan => plan !== null)
+      : [];
   } catch {
     return [];
   }
@@ -55,6 +60,8 @@ export default function App() {
     Record<string, string[]>
   >({});
   const [issueCourse, setIssueCourse] = useState<PlannedCourse | null>(null);
+  const [plannedCourseDetails, setPlannedCourseDetails] =
+    useState<PlannedCourse | null>(null);
 
   useEffect(() => {
     getCurrentUser()
@@ -347,13 +354,6 @@ export default function App() {
     );
   }
 
-  function saveRequirementLayout(layout: RequirementSectionId[]) {
-    if (!activePlan) return;
-    setPlans((current) => current.map((plan) =>
-      plan.id === activePlan.id ? { ...plan, requirementLayout: layout } : plan,
-    ));
-  }
-
   async function handleSignOut() {
     try {
       if (user) await logout();
@@ -369,13 +369,12 @@ export default function App() {
       setEditingPlan(null);
       setCourseToPlace(null);
       setIssueCourse(null);
+      setPlannedCourseDetails(null);
       setPrerequisiteIssues({});
     }
   }
 
-  const activePrograms: Program[] = activePlan
-    ? [activePlan.major, ...(activePlan.minor ? [activePlan.minor] : [])]
-    : [];
+  const activePrograms = activePlan ? getPlanPrograms(activePlan) : [];
 
   function handleSidebarNavigate(href: string) {
     const planId = href.match(/^\/plans\/([^/]+)/)?.[1];
@@ -479,12 +478,17 @@ export default function App() {
                 <p className="eyebrow">YOUR GRADUATION PLAN</p>
                 <h1>{activePlan.name}</h1>
                 <p className="student-copy">
-                  <strong>{activePlan.major.name}</strong>
-                  {activePlan.minor && (
+                  {getPlanPrograms(activePlan).map(({ role, program }, index) => (
+                    <span key={program.id}>
+                      {index > 0 && " · "}
+                      <strong>{role[0]}{role.slice(1).toLowerCase()}:</strong> {program.name}
+                    </span>
+                  ))}
+                  {activePlan && false && activePlan?.minor && (
                     <>
                       {" "}
                       <span aria-hidden="true">·</span> Minor:{" "}
-                      {activePlan.minor.name}
+                      {activePlan?.minor?.name}
                     </>
                   )}
                 </p>
@@ -516,10 +520,12 @@ export default function App() {
               courses={activePlan.courses}
               onRemove={removeCourse}
               onMove={moveCourse}
+              onPlace={placeCourse}
               startTerm={activePlan.startTerm}
               endTerm={activePlan.endTerm}
               prerequisiteIssues={prerequisiteIssues}
               onShowPrerequisiteIssue={setIssueCourse}
+              onShowCourseDetails={setPlannedCourseDetails}
             />
             <div className="content-grid" id="courses">
               <CourseSearch
@@ -528,8 +534,7 @@ export default function App() {
               />
               <RequirementsPanel
                 programs={activePrograms}
-                layout={activePlan.requirementLayout}
-                onLayoutChange={saveRequirementLayout}
+                onPlanCourse={requestCoursePlacement}
               />
             </div>
           </>
@@ -659,6 +664,14 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {plannedCourseDetails && (
+        <CourseDetailsModal
+          course={plannedCourseDetails}
+          plannedTermLabel={getTermLabel(plannedCourseDetails.termId)}
+          onClose={() => setPlannedCourseDetails(null)}
+        />
       )}
 
       <footer>

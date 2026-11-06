@@ -40,7 +40,14 @@ describe("requireAuth", () => {
     await promise;
     expect(prismaMocks.session.findUnique).toHaveBeenCalledWith({
       where: { tokenHash: hashToken("secret") },
-      include: { user: true },
+      select: {
+        userId: true,
+        expiresAt: true,
+        revokedAt: true,
+        user: {
+          select: { id: true, email: true, emailVerifiedAt: true },
+        },
+      },
     });
     expect(req.userId).toBe(user.id);
     expect(req.user).toBe(user);

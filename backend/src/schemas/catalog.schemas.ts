@@ -85,6 +85,9 @@ export const createUniversitySchema = z.object({
 export const updateUniversitySchema = updateSchema(createUniversitySchema);
 
 export const universityChildQuerySchema = searchQuerySchema;
+export const programRequirementsQuerySchema = searchQuerySchema.extend({
+  tree: booleanSchema.optional(),
+});
 export const listDepartmentsSchema = paginatedQuerySchema.extend({
   q: queryStringSchema,
   universityId: uuidSchema.optional(),

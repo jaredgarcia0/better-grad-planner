@@ -10,6 +10,8 @@ import { PlannedCourse } from "./PlanBoard";
 export type GraduationPlan = {
   id: string;
   name: string;
+  /** The canonical program list. major/minor remain for older saved plans and callers. */
+  programs: PlanProgram[];
   major: Program;
   minor: Program | null;
   startTerm: string;
@@ -18,6 +20,28 @@ export type GraduationPlan = {
   notes?: string;
   requirementLayout?: import("../api/client").RequirementSectionId[];
 };
+
+export type PlanProgramRole = "MAJOR" | "MINOR" | "CERTIFICATE";
+export type PlanProgram = { program: Program; role: PlanProgramRole };
+
+export function getPlanPrograms(plan: Pick<GraduationPlan, "programs" | "major" | "minor">): PlanProgram[] {
+  if (plan.programs?.length) return plan.programs;
+  return [
+    { program: plan.major, role: "MAJOR" },
+    ...(plan.minor ? [{ program: plan.minor, role: "MINOR" as const }] : []),
+  ];
+}
+
+export function normalizeGraduationPlan(plan: Omit<GraduationPlan, "programs" | "major" | "minor"> & Partial<Pick<GraduationPlan, "programs" | "major" | "minor">>): GraduationPlan | null {
+  const programs = plan.programs?.length
+    ? plan.programs
+    : plan.major
+      ? [{ program: plan.major, role: "MAJOR" as const }, ...(plan.minor ? [{ program: plan.minor, role: "MINOR" as const }] : [])]
+      : [];
+  const major = programs.find(({ role }) => role === "MAJOR")?.program;
+  if (!major) return null;
+  return { ...plan, programs, major, minor: programs.find(({ role }) => role === "MINOR")?.program ?? null };
+}
 
 function termRangeLabel(startTerm: string, endTerm: string) {
   const start = getTermLabel(startTerm);
@@ -118,18 +142,16 @@ export function PlanLibrary({
                   </div>
                 </div>
                 <h2>{plan.name}</h2>
-                <p className="plan-card-major">{plan.major.name}</p>
+                <p className="plan-card-major">
+                  {getPlanPrograms(plan).find(({ role }) => role === "MAJOR")?.program.name}
+                </p>
                 <div className="plan-card-details">
-                  {plan.minor ? (
-                    <span>
-                      <b>Minor</b>
-                      {plan.minor.name}
-                    </span>
-                  ) : (
-                    <span>
-                      <b>Minor</b>Not selected
-                    </span>
-                  )}
+                  <span>
+                    <b>Programs</b>
+                    {getPlanPrograms(plan)
+                      .map(({ role, program }) => `${role[0]}${role.slice(1).toLowerCase()}: ${program.name}`)
+                      .join(" · ")}
+                  </span>
                   <span>
                     <b>Schedule</b>
                     {termRangeLabel(plan.startTerm, plan.endTerm)}
@@ -162,12 +184,14 @@ function ProgramPicker({
   degreeType,
   selected,
   onChange,
+  excludedProgramIds = [],
 }: {
   label: string;
   help: string;
-  degreeType: "BACHELOR" | "MINOR";
+  degreeType: "BACHELOR" | "MINOR" | "CERTIFICATE";
   selected: Program | null;
   onChange: (program: Program | null) => void;
+  excludedProgramIds?: string[];
 }) {
   const [query, setQuery] = useState(selected?.name ?? "");
   const [open, setOpen] = useState(!selected);
@@ -186,7 +210,11 @@ function ProgramPicker({
           degreeType,
           pageSize: 100,
         });
-        if (!cancelled) setResults(response.data);
+        if (!cancelled) {
+          setResults(response.data.filter((program) =>
+            !excludedProgramIds.includes(program.id) || program.id === selected?.id,
+          ));
+        }
       } catch (requestError) {
         if (!cancelled) {
           setError(
@@ -203,7 +231,7 @@ function ProgramPicker({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [degreeType, open, query]);
+  }, [degreeType, excludedProgramIds.join(","), open, query, selected?.id]);
 
   function clearSelection() {
     onChange(null);
@@ -222,7 +250,11 @@ function ProgramPicker({
           <div>
             <strong>{selected.name}</strong>
             <span>
-              {degreeType === "MINOR" ? "Minor program" : "Bachelor’s program"}
+              {degreeType === "MINOR"
+                ? "Minor program"
+                : degreeType === "CERTIFICATE"
+                  ? "Certificate program"
+                  : "Bachelor’s program"}
             </span>
           </div>
           <button
@@ -246,7 +278,7 @@ function ProgramPicker({
               autoComplete="off"
               aria-expanded={open}
               aria-controls={`program-results-${degreeType}`}
-              placeholder={`Search ${degreeType === "MINOR" ? "minors" : "majors"}`}
+              placeholder={`Search ${degreeType === "MINOR" ? "minors" : degreeType === "CERTIFICATE" ? "certificates" : "majors"}`}
               onFocus={() => setOpen(true)}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => {
@@ -317,12 +349,11 @@ export function PlanSetup({
 }) {
   const [name, setName] = useState(initialPlan?.name ?? "");
   const [major, setMajor] = useState<Program | null>(
-    initialPlan?.major ?? null,
+    initialPlan ? getPlanPrograms(initialPlan).find(({ role }) => role === "MAJOR")?.program ?? null : null,
   );
-  const [minor, setMinor] = useState<Program | null>(
-    initialPlan?.minor ?? null,
+  const [additionalPrograms, setAdditionalPrograms] = useState<PlanProgram[]>(
+    initialPlan ? getPlanPrograms(initialPlan).filter(({ role }) => role !== "MAJOR") : [],
   );
-  const [minorVisible, setMinorVisible] = useState(Boolean(initialPlan?.minor));
   const [defaultTerms] = useState(getDefaultTermRange);
   const [startTerm, setStartTerm] = useState(
     initialPlan?.startTerm ?? defaultTerms.startTerm,
@@ -353,11 +384,13 @@ export function PlanSetup({
       setFormError("The last semester must be after the first semester.");
       return;
     }
+    const programs: PlanProgram[] = [{ program: major, role: "MAJOR" }, ...additionalPrograms.filter(({ program }) => program.id)];
     onSave({
       id: initialPlan?.id ?? crypto.randomUUID(),
       name: name.trim(),
+      programs,
       major,
-      minor,
+      minor: programs.find(({ role }) => role === "MINOR")?.program ?? null,
       startTerm,
       endTerm,
       courses: initialPlan?.courses ?? [],
@@ -414,39 +447,38 @@ export function PlanSetup({
             selected={major}
             onChange={(program) => {
               setMajor(program);
+              if (program) {
+                setAdditionalPrograms((current) => current.filter(({ program: included }) => included.id !== program.id));
+              }
               if (program && !name.trim()) setName(`${program.name} Plan`);
             }}
           />
-          {minorVisible ? (
-            <div className="minor-picker-row">
+          {additionalPrograms.map((entry, index) => (
+            <div className="minor-picker-row" key={`${entry.role}-${index}`}>
               <ProgramPicker
-                label="Minor"
+                label={entry.role === "MINOR" ? "Minor" : "Certificate"}
                 help="Optional"
-                degreeType="MINOR"
-                selected={minor}
-                onChange={setMinor}
-              />
-              <button
-                className="remove-minor-button"
-                type="button"
-                onClick={() => {
-                  setMinor(null);
-                  setMinorVisible(false);
+                degreeType={entry.role === "MINOR" ? "MINOR" : "CERTIFICATE"}
+                selected={entry.program.id ? entry.program : null}
+                excludedProgramIds={[major?.id, ...additionalPrograms.map(({ program }) => program.id).filter((id) => id !== entry.program.id)].filter(Boolean) as string[]}
+                onChange={(program) => {
+                  if (!program) return;
+                  setAdditionalPrograms((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, program } : item));
                 }}
-              >
-                Remove minor
+              />
+              <button className="remove-minor-button" type="button" onClick={() => setAdditionalPrograms((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
+                Remove {entry.role.toLowerCase()}
               </button>
             </div>
-          ) : (
-            <button
-              className="add-minor-button"
-              type="button"
-              onClick={() => setMinorVisible(true)}
-            >
-              <span aria-hidden="true">+</span> Add a minor{" "}
-              <small>Optional</small>
+          ))}
+          <div className="setup-form-actions">
+            <button className="add-minor-button" type="button" onClick={() => setAdditionalPrograms((current) => [...current, { role: "MINOR", program: { id: "", name: "" } }])}>
+              <span aria-hidden="true">+</span> Add a minor <small>Optional</small>
             </button>
-          )}
+            <button className="add-minor-button" type="button" onClick={() => setAdditionalPrograms((current) => [...current, { role: "CERTIFICATE", program: { id: "", name: "" } }])}>
+              <span aria-hidden="true">+</span> Add a certificate <small>Optional</small>
+            </button>
+          </div>
 
           <div className="semester-fields">
             <div className="setup-form-heading semester-heading">

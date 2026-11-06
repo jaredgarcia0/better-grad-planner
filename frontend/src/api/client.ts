@@ -12,6 +12,7 @@ export type Course = {
   credits: number;
   level?: string | null;
   active?: boolean;
+  description?: string | null;
   department?: { name?: string; code?: string } | null;
 };
 
@@ -20,18 +21,40 @@ export type University = {
   name: string;
   shortName?: string | null;
 };
-export type Program = { id: string; name: string; degreeType?: string | null };
-export type RequirementGroup = {
+export type Program = {
   id: string;
   name: string;
+  degreeType?: string | null;
+  code?: string;
+  catalogYear?: number | null;
+  totalCredits?: number | null;
+};
+export type RequirementGroup = {
+  id: string;
+  programId: string;
+  parentId?: string | null;
+  name: string;
+  description?: string | null;
   requirementType: string;
+  operator: "ALL" | "ANY";
+  sequence: number;
+  minCourses?: number | null;
+  maxCourses?: number | null;
   minCredits?: number | null;
   maxCredits?: number | null;
 };
 export type RequirementCourseLink = {
   id: string;
+  requirementId: string;
   courseId: string;
+  sequence: number;
+  minGrade?: string | null;
   creditsOverride?: number | null;
+  course: Pick<Course, "id" | "code" | "title" | "credits">;
+};
+export type RequirementNode = RequirementGroup & {
+  courses: RequirementCourseLink[];
+  children: RequirementNode[];
 };
 export type CoursePrerequisite = {
   id: string;
@@ -161,6 +184,13 @@ export function listPrograms(
 export function listProgramRequirements(programId: string) {
   return apiRequest<ApiList<RequirementGroup>>(
     `/api/programs/${programId}/requirements?pageSize=100`,
+  );
+}
+
+/** Loads a program's nested requirement groups and embedded course summaries in one request. */
+export function getProgramRequirementTree(programId: string) {
+  return apiRequest<ApiList<RequirementNode>>(
+    `/api/programs/${programId}/requirements?tree=true&pageSize=100`,
   );
 }
 

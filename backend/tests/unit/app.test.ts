@@ -66,6 +66,17 @@ describe("API", () => {
       orderBy: { code: "asc" },
       skip: 10,
       take: 10,
+      select: {
+        id: true,
+        universityId: true,
+        departmentId: true,
+        code: true,
+        title: true,
+        credits: true,
+        level: true,
+        active: true,
+        department: { select: { code: true, name: true } },
+      },
     });
     expect(prismaMocks.course.count).toHaveBeenCalledWith({
       where: {
@@ -76,6 +87,34 @@ describe("API", () => {
         ],
       },
     });
+  });
+
+  it("returns program requirements as ordered roots with nested groups and course summaries", async () => {
+    const programId = "123e4567-e89b-42d3-a456-426614174000";
+    const rootId = "123e4567-e89b-42d3-a456-426614174001";
+    const childId = "123e4567-e89b-42d3-a456-426614174002";
+    prismaMocks.requirementGroup.findMany.mockResolvedValue([
+      {
+        id: rootId, programId, parentId: null, name: "Core", requirementType: "REQUIRED", operator: "ALL", sequence: 1,
+        minCourses: null, maxCourses: null, minCredits: null, maxCredits: null,
+        courses: [{ id: "link-1", requirementId: rootId, courseId: "course-1", sequence: 0, minGrade: "C", creditsOverride: null, course: { id: "course-1", code: "CS 101", title: "Intro", credits: 3 } }],
+      },
+      {
+        id: childId, programId, parentId: rootId, name: "Choose one", requirementType: "ELECTIVE", operator: "ANY", sequence: 0,
+        minCourses: 1, maxCourses: null, minCredits: null, maxCredits: null,
+        courses: [],
+      },
+    ]);
+
+    const response = await request(app).get(`/api/programs/${programId}/requirements?tree=true`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0]).toMatchObject({ id: rootId, operator: "ALL", courses: [{ minGrade: "C", course: { code: "CS 101" } }] });
+    expect(response.body.data[0].children).toMatchObject([{ id: childId, operator: "ANY" }]);
+    expect(prismaMocks.requirementGroup.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { programId }, orderBy: { sequence: "asc" },
+    }));
   });
 
   it("applies defaults and trims strings when creating a course", async () => {
