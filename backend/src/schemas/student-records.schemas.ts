@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dashboardLayoutSchema, requirementLayoutSchema, termKeySchema } from "./plan-workspace.schemas.js";
 import {
   booleanSchema,
   integerSchema,
@@ -57,10 +58,8 @@ const degreePlanFields = {
   programId: uuidSchema,
   name: requiredStringSchema,
   notes: optionalStringSchema,
-  requirementLayout: z
-    .array(z.enum(["major", "general", "electives"]))
-    .max(3)
-    .optional(),
+  requirementLayout: requirementLayoutSchema.optional(),
+  dashboardLayout: dashboardLayoutSchema.nullable().optional(),
   status: degreePlanStatusSchema,
   isDefault: booleanSchema,
 };
@@ -77,6 +76,7 @@ export const listPlannedCoursesSchema = pageQuerySchema.extend({
 const plannedCourseFields = {
   courseId: uuidSchema,
   termId: uuidSchema.nullable().optional(),
+  termKey: termKeySchema.nullable().optional(),
   sequence: integerSchema.min(0),
   notes: optionalStringSchema,
 };

@@ -188,6 +188,10 @@ model DegreePlan {
   name      String
   notes     String?
   requirementLayout Json?
+  dashboardLayout Json?
+  programs Json?
+  startTerm String?
+  endTerm String?
   status    DegreePlanStatus @default(DRAFT)
   isDefault Boolean          @default(false)
   createdAt DateTime         @default(now())
@@ -207,6 +211,7 @@ model PlannedCourse {
   planId   String  @db.Uuid
   courseId String  @db.Uuid
   termId   String? @db.Uuid
+  termKey  String?
   sequence Int     @default(0)
   notes    String?
 
