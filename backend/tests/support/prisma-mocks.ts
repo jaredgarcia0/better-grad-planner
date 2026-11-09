@@ -4,8 +4,10 @@ type MockModel = {
   findMany: ReturnType<typeof vi.fn>;
   count: ReturnType<typeof vi.fn>;
   findUnique: ReturnType<typeof vi.fn>;
+  findUniqueOrThrow: ReturnType<typeof vi.fn>;
   findFirst: ReturnType<typeof vi.fn>;
   create: ReturnType<typeof vi.fn>;
+  createMany: ReturnType<typeof vi.fn>;
   update: ReturnType<typeof vi.fn>;
   updateMany: ReturnType<typeof vi.fn>;
   delete: ReturnType<typeof vi.fn>;
@@ -17,8 +19,10 @@ const createModel = (): MockModel => ({
   findMany: vi.fn(),
   count: vi.fn(),
   findUnique: vi.fn(),
+  findUniqueOrThrow: vi.fn(),
   findFirst: vi.fn(),
   create: vi.fn(),
+  createMany: vi.fn(),
   update: vi.fn(),
   updateMany: vi.fn(),
   delete: vi.fn(),

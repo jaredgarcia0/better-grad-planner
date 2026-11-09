@@ -1,5 +1,7 @@
 import { prisma } from "../lib/prisma.js";
-import { DegreePlanStatus, type Prisma } from "../../generated/prisma/client.js";
+import { DegreePlanStatus, Prisma } from "../../generated/prisma/client.js";
+import type { PlanWorkspace } from "../schemas/plan-workspace.schemas.js";
+import { planInclude, savePlanWorkspace, workspaceResponse } from "../services/plan-workspace.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { HttpError } from "../utils/httpError.js";
 import { pagination, response } from "../utils/parse.js";
@@ -34,27 +36,17 @@ export const listDegreePlans = asyncHandler(async (req, res) => {
       orderBy: { updatedAt: "desc" },
       skip: page.skip,
       take: page.take,
-      select: {
-        id: true,
-        userId: true,
-        programId: true,
-        name: true,
-        notes: true,
-        requirementLayout: true,
-        status: true,
-        isDefault: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      include: planInclude,
     }),
     prisma.degreePlan.count({ where }),
   ]);
-  res.json(response(data, page, total));
+  res.json(response(data.map(workspaceResponse), page, total));
 });
 
 export const createDegreePlan = asyncHandler(async (req, res) => {
   const userId = req.user!.id;
   const data = req.body as Prisma.DegreePlanUncheckedCreateInput;
+  if (req.body.dashboardLayout === null) data.dashboardLayout = Prisma.JsonNull;
   if (data.isDefault) {
     await prisma.degreePlan.updateMany({
       where: { userId, isDefault: true },
@@ -66,7 +58,16 @@ export const createDegreePlan = asyncHandler(async (req, res) => {
 });
 
 export const getDegreePlan = asyncHandler(async (req, res) => {
-  const plan = await ownedPlan(req.params.id as string, req.user!.id);
+  const plan = await prisma.degreePlan.findFirst({
+    where: { id: req.params.id as string, userId: req.user!.id },
+    include: planInclude,
+  });
+  if (!plan) throw new HttpError(404, "The requested record was not found.");
+  res.json({ data: workspaceResponse(plan) });
+});
+
+export const putPlanWorkspace = asyncHandler(async (req, res) => {
+  const plan = await savePlanWorkspace(req.params.id as string, req.user!.id, req.body as PlanWorkspace);
   res.json({ data: plan });
 });
 
@@ -74,6 +75,7 @@ export const updateDegreePlan = asyncHandler(async (req, res) => {
   const userId = req.user!.id;
   const plan = await ownedPlan(req.params.id as string, userId);
   const data = req.body as Prisma.DegreePlanUncheckedUpdateInput;
+  if (req.body.dashboardLayout === null) data.dashboardLayout = Prisma.JsonNull;
   if (data.isDefault) {
     await prisma.degreePlan.updateMany({
       where: { userId, isDefault: true, NOT: { id: plan.id } },
@@ -109,6 +111,7 @@ export const listPlannedCourses = asyncHandler(async (req, res) => {
         planId: true,
         courseId: true,
         termId: true,
+        termKey: true,
         sequence: true,
         notes: true,
       },

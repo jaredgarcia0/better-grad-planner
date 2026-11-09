@@ -65,6 +65,7 @@ describe("student record routes", () => {
     expect(response.status).toBe(404);
     expect(prismaMocks.degreePlan.findFirst).toHaveBeenCalledWith({
       where: { id: planId, userId: testIds.user },
+      include: expect.objectContaining({ program: true, courses: expect.any(Object) }),
     });
   });
 

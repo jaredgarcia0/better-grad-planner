@@ -8,10 +8,12 @@ import {
   getPlannedCourse,
   listDegreePlans,
   listPlannedCourses,
+  putPlanWorkspace,
   updateDegreePlan,
   updatePlannedCourse,
 } from "../controllers/student-records.controller.js";
 import { requireAuth } from "../middleware/auth.js";
+import { planWorkspaceSchema } from "../schemas/plan-workspace.schemas.js";
 import { validate } from "../middleware/validate.js";
 import {
   createDegreePlanSchema,
@@ -31,6 +33,11 @@ plansRouter.use(requireAuth);
 
 plansRouter.get("/", validate({ query: listDegreePlansSchema }), listDegreePlans);
 plansRouter.post("/", validate({ body: createDegreePlanSchema }), createDegreePlan);
+plansRouter.put(
+  "/:id/workspace",
+  validate({ params: idParamsSchema, body: planWorkspaceSchema }),
+  putPlanWorkspace,
+);
 plansRouter.get(
   "/:planId/courses",
   validate({ params: planIdParamsSchema, query: listPlannedCoursesSchema }),

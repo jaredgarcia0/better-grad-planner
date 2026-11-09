@@ -6,6 +6,7 @@ import {
   listPlanTerms,
 } from "../plannerTerms";
 import { PlannedCourse } from "./PlanBoard";
+import { normalizeDashboardLayout, type DashboardLayout } from "../dashboardLayout";
 
 export type GraduationPlan = {
   id: string;
@@ -19,6 +20,7 @@ export type GraduationPlan = {
   courses: PlannedCourse[];
   notes?: string;
   requirementLayout?: import("../api/client").RequirementSectionId[];
+  dashboardLayout?: DashboardLayout;
 };
 
 export type PlanProgramRole = "MAJOR" | "MINOR" | "CERTIFICATE";
@@ -33,14 +35,29 @@ export function getPlanPrograms(plan: Pick<GraduationPlan, "programs" | "major" 
 }
 
 export function normalizeGraduationPlan(plan: Omit<GraduationPlan, "programs" | "major" | "minor"> & Partial<Pick<GraduationPlan, "programs" | "major" | "minor">>): GraduationPlan | null {
+  if (!plan || typeof plan !== "object" || typeof plan.id !== "string" || typeof plan.name !== "string" || !Array.isArray(plan.courses)) return null;
+  if (plan.programs !== undefined && !Array.isArray(plan.programs)) return null;
   const programs = plan.programs?.length
     ? plan.programs
     : plan.major
       ? [{ program: plan.major, role: "MAJOR" as const }, ...(plan.minor ? [{ program: plan.minor, role: "MINOR" as const }] : [])]
       : [];
+  if (!programs.every((entry) => entry && typeof entry === "object" &&
+    ["MAJOR", "MINOR", "CERTIFICATE"].includes(entry.role) && entry.program &&
+    typeof entry.program.id === "string" && typeof entry.program.name === "string")) return null;
+  if (!plan.courses.every((course) => course && typeof course.id === "string" &&
+    typeof course.code === "string" && typeof course.title === "string" &&
+    typeof course.credits === "number" && Number.isFinite(course.credits) && typeof course.termId === "string")) return null;
   const major = programs.find(({ role }) => role === "MAJOR")?.program;
   if (!major) return null;
-  return { ...plan, programs, major, minor: programs.find(({ role }) => role === "MINOR")?.program ?? null };
+  return {
+    ...plan, programs, major,
+    minor: programs.find(({ role }) => role === "MINOR")?.program ?? null,
+    startTerm: typeof plan.startTerm === "string" ? plan.startTerm : "",
+    endTerm: typeof plan.endTerm === "string" ? plan.endTerm : "",
+    notes: typeof plan.notes === "string" ? plan.notes : "",
+    dashboardLayout: normalizeDashboardLayout(plan.dashboardLayout),
+  };
 }
 
 function termRangeLabel(startTerm: string, endTerm: string) {
@@ -345,7 +362,7 @@ export function PlanSetup({
 }: {
   initialPlan: GraduationPlan | null;
   onCancel: () => void;
-  onSave: (plan: GraduationPlan) => void;
+  onSave: (plan: GraduationPlan) => Promise<void>;
 }) {
   const [name, setName] = useState(initialPlan?.name ?? "");
   const [major, setMajor] = useState<Program | null>(
@@ -362,10 +379,12 @@ export function PlanSetup({
     initialPlan?.endTerm ?? defaultTerms.endTerm,
   );
   const [formError, setFormError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const terms = listPlanTerms();
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSaving) return;
     setFormError(null);
     if (!major) {
       setFormError("Choose a major to continue.");
@@ -385,21 +404,30 @@ export function PlanSetup({
       return;
     }
     const programs: PlanProgram[] = [{ program: major, role: "MAJOR" }, ...additionalPrograms.filter(({ program }) => program.id)];
-    onSave({
-      id: initialPlan?.id ?? crypto.randomUUID(),
-      name: name.trim(),
-      programs,
-      major,
-      minor: programs.find(({ role }) => role === "MINOR")?.program ?? null,
-      startTerm,
-      endTerm,
-      courses: initialPlan?.courses ?? [],
-    });
+    setIsSaving(true);
+    try {
+      await onSave({
+        ...initialPlan,
+        id: initialPlan?.id ?? crypto.randomUUID(),
+        name: name.trim(),
+        programs,
+        major,
+        minor: programs.find(({ role }) => role === "MINOR")?.program ?? null,
+        startTerm,
+        endTerm,
+        courses: initialPlan?.courses ?? [],
+        dashboardLayout: normalizeDashboardLayout(initialPlan?.dashboardLayout),
+      });
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Your plan could not be saved. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
     <section className="plan-setup-page">
-      <button className="back-link" type="button" onClick={onCancel}>
+      <button className="back-link" type="button" disabled={isSaving} onClick={onCancel}>
         <span aria-hidden="true">←</span> Back to plans
       </button>
       <div className="plan-setup-layout">
@@ -422,6 +450,7 @@ export function PlanSetup({
         </div>
 
         <form className="plan-setup-form" onSubmit={handleSubmit}>
+          <fieldset disabled={isSaving} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
           <div className="setup-form-heading">
             <span>01</span>
             <div>
@@ -534,11 +563,12 @@ export function PlanSetup({
             >
               Cancel
             </button>
-            <button className="primary-button" type="submit">
-              {initialPlan ? "Save changes" : "Create and open plan"}{" "}
+            <button className="primary-button" type="submit" disabled={isSaving}>
+              {isSaving ? "Saving…" : initialPlan ? "Save changes" : "Create and open plan"}{" "}
               <span aria-hidden="true">→</span>
             </button>
           </div>
+          </fieldset>
         </form>
       </div>
     </section>
