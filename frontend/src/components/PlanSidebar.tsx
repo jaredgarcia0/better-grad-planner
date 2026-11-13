@@ -1,5 +1,6 @@
 import { useState, type MouseEvent } from "react";
 import type { User } from "../api/client";
+import { useTheme } from "../theme";
 import type { GraduationPlan } from "./PlanLibrary";
 
 type PlanSidebarProps = {
@@ -49,6 +50,7 @@ export function PlanSidebar({
   const [plansOpen, setPlansOpen] = useState(true);
   const [deleteCandidate, setDeleteCandidate] = useState<GraduationPlan | null>(null);
   const activePlan = plans.find((plan) => plan.id === activePlanId) ?? null;
+  const { theme, toggleTheme } = useTheme();
 
   function handleNavigation(event: MouseEvent<HTMLAnchorElement>) {
     if (!shouldHandleNavigation(event)) return;
@@ -200,6 +202,16 @@ export function PlanSidebar({
             <span title={user.email}>{user.email}</span>
           </div>
         </div>
+        <button
+          className="plan-sidebar__theme-toggle"
+          type="button"
+          role="switch"
+          aria-checked={theme === "dark"}
+          onClick={toggleTheme}
+        >
+          <span>Dark mode</span>
+          <span className="plan-sidebar__switch" aria-hidden="true" />
+        </button>
         <button
           className="plan-sidebar__sign-out"
           type="button"
