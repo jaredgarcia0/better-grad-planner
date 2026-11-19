@@ -29,6 +29,11 @@ config({ path: [path.join(currentDir, "../.env"), path.join(currentDir, "../../.
 
 interface CatalogData {
   university: { name: string; shortName?: string; websiteUrl?: string };
+  /** Maps each major degree type in this catalog to its applicable GE program. */
+  generalEducationMappings?: {
+    majorDegreeType: DegreeType;
+    programCode: string;
+  }[];
   departments: { code: string; name: string }[];
   courses: {
     code: string;
@@ -164,6 +169,39 @@ async function seedCatalog(tx: Prisma.TransactionClient, data: CatalogData) {
         "updatedAt" = CURRENT_TIMESTAMP
       RETURNING "id", "code"`;
     for (const { id, code } of upserted) programIds.set(code, id);
+  }
+
+  // GE applicability belongs to the catalog, rather than to the frontend. Reset
+  // only programs seeded from this file so a re-seed also removes stale mappings.
+  const seededProgramIds = [...new Set(programIds.values())];
+  await tx.degreeProgram.updateMany({
+    where: { id: { in: seededProgramIds } },
+    data: { generalEducationProgramId: null },
+  });
+  const mappedDegreeTypes = new Set<DegreeType>();
+  for (const mapping of data.generalEducationMappings ?? []) {
+    if (mappedDegreeTypes.has(mapping.majorDegreeType)) {
+      throw new Error(`General education is mapped more than once for ${mapping.majorDegreeType}`);
+    }
+    mappedDegreeTypes.add(mapping.majorDegreeType);
+    const generalEducationProgram = data.programs.find(
+      (program) => program.code === mapping.programCode,
+    );
+    const generalEducationProgramId = programIds.get(mapping.programCode);
+    if (!generalEducationProgramId || generalEducationProgram?.degreeType !== "GENERAL_EDUCATION") {
+      throw new Error(
+        `General education mapping for ${mapping.majorDegreeType} must reference a GENERAL_EDUCATION program`,
+      );
+    }
+    const majorIds = data.programs
+      .filter((program) => program.degreeType === mapping.majorDegreeType)
+      .map((program) => programIds.get(program.code)!);
+    if (majorIds.length) {
+      await tx.degreeProgram.updateMany({
+        where: { id: { in: majorIds } },
+        data: { generalEducationProgramId },
+      });
+    }
   }
 
   // Requirement groups are rebuilt; children and their course links cascade.

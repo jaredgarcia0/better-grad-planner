@@ -63,6 +63,7 @@ const updateSchema = <T extends z.ZodRawShape>(schema: z.ZodObject<T>) =>
   );
 
 export const idParamsSchema = z.object({ id: uuidSchema });
+export const majorIdParamsSchema = z.object({ majorId: uuidSchema });
 const pageQuerySchema = z.object({
   page: z.preprocess(
     (value) => (value === undefined ? 1 : value),
