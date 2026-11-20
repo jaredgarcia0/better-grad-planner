@@ -43,6 +43,7 @@ export const listPrograms = asyncHandler(async (req, res) => {
         degreeType: true,
         catalogYear: true,
         totalCredits: true,
+        generalEducationProgramId: true,
       },
     },
   );

@@ -29,11 +29,6 @@ config({ path: [path.join(currentDir, "../.env"), path.join(currentDir, "../../.
 
 interface CatalogData {
   university: { name: string; shortName?: string; websiteUrl?: string };
-  /** Maps each major degree type in this catalog to its applicable GE program. */
-  generalEducationMappings?: {
-    majorDegreeType: DegreeType;
-    programCode: string;
-  }[];
   departments: { code: string; name: string }[];
   courses: {
     code: string;
@@ -77,6 +72,29 @@ function chunks<T>(rows: T[], size = BATCH_SIZE): T[][] {
   const result: T[][] = [];
   for (let i = 0; i < rows.length; i += size) result.push(rows.slice(i, i + size));
   return result;
+}
+
+function generalEducationReferences(
+  group: RequirementGroupData,
+  generalEducationCodes: readonly string[],
+): string[] {
+  const description = group.description ?? "";
+  const ownReferences = generalEducationCodes.filter((code) =>
+    description.includes(`program(s): ${code}`),
+  );
+  return [
+    ...ownReferences,
+    ...group.children.flatMap((child) =>
+      generalEducationReferences(child, generalEducationCodes),
+    ),
+  ];
+}
+
+function containsGeneralEducationRequirement(group: RequirementGroupData): boolean {
+  return (
+    group.requirementType === "GENERAL_EDUCATION" ||
+    group.children.some(containsGeneralEducationRequirement)
+  );
 }
 
 async function seedCatalog(tx: Prisma.TransactionClient, data: CatalogData) {
@@ -171,34 +189,64 @@ async function seedCatalog(tx: Prisma.TransactionClient, data: CatalogData) {
     for (const { id, code } of upserted) programIds.set(code, id);
   }
 
-  // GE applicability belongs to the catalog, rather than to the frontend. Reset
-  // only programs seeded from this file so a re-seed also removes stale mappings.
+  // A major's catalog entry contains a small GE placeholder that names the real
+  // GE program (for example, "program(s): GE - BACH"). Store that relationship
+  // on the major instead of inserting the placeholder into RequirementGroup.
+  // This also preserves special GE tables such as ABET and teacher preparation.
   const seededProgramIds = [...new Set(programIds.values())];
   await tx.degreeProgram.updateMany({
     where: { id: { in: seededProgramIds } },
     data: { generalEducationProgramId: null },
   });
-  const mappedDegreeTypes = new Set<DegreeType>();
-  for (const mapping of data.generalEducationMappings ?? []) {
-    if (mappedDegreeTypes.has(mapping.majorDegreeType)) {
-      throw new Error(`General education is mapped more than once for ${mapping.majorDegreeType}`);
-    }
-    mappedDegreeTypes.add(mapping.majorDegreeType);
-    const generalEducationProgram = data.programs.find(
-      (program) => program.code === mapping.programCode,
+  const generalEducationCodes = data.programs
+    .filter((program) => program.degreeType === "GENERAL_EDUCATION")
+    .map((program) => program.code);
+  const majorsByGeneralEducationId = new Map<string, string[]>();
+  const programRequirementRoots = new Map<string, RequirementGroupData[]>();
+  for (const program of data.programs) {
+    const references = [
+      ...new Set(
+        program.requirementGroups.flatMap((group) =>
+          generalEducationReferences(group, generalEducationCodes),
+        ),
+      ),
+    ];
+    const hasGeneralEducationRequirement = program.requirementGroups.some(
+      containsGeneralEducationRequirement,
     );
-    const generalEducationProgramId = programIds.get(mapping.programCode);
-    if (!generalEducationProgramId || generalEducationProgram?.degreeType !== "GENERAL_EDUCATION") {
+    if (hasGeneralEducationRequirement && references.length === 0) {
+      throw new Error(`Program ${program.code} has an unrecognized general education requirement`);
+    }
+    if (references.length > 1) {
       throw new Error(
-        `General education mapping for ${mapping.majorDegreeType} must reference a GENERAL_EDUCATION program`,
+        `Program ${program.code} references multiple general education programs: ${references.join(", ")}`,
       );
     }
-    const majorIds = data.programs
-      .filter((program) => program.degreeType === mapping.majorDegreeType)
-      .map((program) => programIds.get(program.code)!);
-    if (majorIds.length) {
+    if (references.length === 1) {
+      if (program.degreeType === "GENERAL_EDUCATION") {
+        throw new Error(`General education program ${program.code} cannot reference another GE program`);
+      }
+      const generalEducationProgramId = programIds.get(references[0]);
+      if (!generalEducationProgramId) {
+        throw new Error(`Program ${program.code} references missing GE program ${references[0]}`);
+      }
+      const majorId = programIds.get(program.code)!;
+      majorsByGeneralEducationId.set(generalEducationProgramId, [
+        ...(majorsByGeneralEducationId.get(generalEducationProgramId) ?? []),
+        majorId,
+      ]);
+    }
+    programRequirementRoots.set(
+      program.code,
+      program.requirementGroups.filter(
+        (group) => generalEducationReferences(group, generalEducationCodes).length === 0,
+      ),
+    );
+  }
+  for (const [generalEducationProgramId, majorIds] of majorsByGeneralEducationId) {
+    for (const batch of chunks(majorIds)) {
       await tx.degreeProgram.updateMany({
-        where: { id: { in: majorIds } },
+        where: { id: { in: batch } },
         data: { generalEducationProgramId },
       });
     }
@@ -216,7 +264,11 @@ async function seedCatalog(tx: Prisma.TransactionClient, data: CatalogData) {
   const courseRows: Prisma.RequirementCourseCreateManyInput[] = [];
   for (const program of data.programs) {
     const programId = programIds.get(program.code)!;
-    let level = program.requirementGroups.map((group, sequence) => ({ group, sequence, parentId: null as string | null }));
+    let level = programRequirementRoots.get(program.code)!.map((group, sequence) => ({
+      group,
+      sequence,
+      parentId: null as string | null,
+    }));
     while (level.length) {
       const next: typeof level = [];
       for (const { group, sequence, parentId } of level) {

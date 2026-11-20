@@ -269,7 +269,11 @@ GET /api/terms/:id/offerings
 
 `GET /api/programs/:majorId/general-education` returns the general-education
 program assigned to the major by the catalog seed. It returns `404` when the
-major does not exist or its catalog has no GE assignment.
+major does not exist or its catalog has no GE assignment. Program list responses
+include `generalEducationProgramId` so clients can discover the same relationship
+without an additional lookup. A linked major's GE placeholder is not included in
+`GET /api/programs/:id/requirements`; fetch the linked GE program's requirements
+with `GET /api/programs/:generalEducationProgramId/requirements` instead.
 
 ## Example
 
