@@ -9,6 +9,7 @@ import {
   queryValue,
   updateResource,
 } from "./common.controller.js";
+import { HttpError } from "../utils/httpError.js";
 
 export const listPrograms = asyncHandler(async (req, res) => {
   const search = queryValue(req, "q");
@@ -42,6 +43,7 @@ export const listPrograms = asyncHandler(async (req, res) => {
         degreeType: true,
         catalogYear: true,
         totalCredits: true,
+        generalEducationProgramId: true,
       },
     },
   );
@@ -58,6 +60,31 @@ export const updateProgram = asyncHandler(async (req, res) =>
 export const deleteProgram = asyncHandler(async (req, res) =>
   deleteResource(req, res, prisma.degreeProgram),
 );
+
+/** Returns the catalog-selected GE program applicable to the requested major. */
+export const getMajorGeneralEducation = asyncHandler(async (req, res) => {
+  const major = await prisma.degreeProgram.findUnique({
+    where: { id: req.params.majorId as string },
+    select: {
+      generalEducationProgram: {
+        select: {
+          id: true,
+          universityId: true,
+          code: true,
+          name: true,
+          degreeType: true,
+          catalogYear: true,
+          totalCredits: true,
+        },
+      },
+    },
+  });
+  if (!major) throw new HttpError(404, "The requested major was not found.");
+  if (!major.generalEducationProgram) {
+    throw new HttpError(404, "No general education program is configured for this major.");
+  }
+  res.json({ data: major.generalEducationProgram });
+});
 
 export const listProgramRequirements = asyncHandler(async (req, res) => {
   const search = queryValue(req, "q");

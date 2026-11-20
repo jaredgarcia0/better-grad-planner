@@ -206,6 +206,13 @@ export function getProgramRequirementTree(programId: string) {
   );
 }
 
+/** Loads the catalog-selected general education program for a major. */
+export function getMajorGeneralEducation(majorId: string) {
+  return apiRequest<{ data: Program }>(
+    `/api/programs/${majorId}/general-education`,
+  );
+}
+
 export function listRequirementCourses(requirementId: string) {
   return apiRequest<ApiList<RequirementCourseLink>>(
     `/api/requirements/${requirementId}/courses?pageSize=100`,
