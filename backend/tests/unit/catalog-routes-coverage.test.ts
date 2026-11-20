@@ -2,6 +2,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { prismaMocks, resetPrismaMocks } from "../support/prisma-mocks.js";
 import { testIds } from "../support/test-ids.js";
+import { programFixture } from "../support/fixtures.js";
 
 vi.mock("../../src/lib/prisma.js", () => ({ prisma: prismaMocks }));
 
@@ -68,5 +69,50 @@ describe("catalog CRUD route coverage", () => {
     model.count.mockResolvedValue(0);
     const response = await request(app).get(url);
     expect(response.status).toBe(200);
+  });
+});
+
+describe("major general-education lookup", () => {
+  beforeEach(() => resetPrismaMocks());
+
+  it("returns the catalog-selected GE program for a major", async () => {
+    const generalEducationProgram = programFixture({
+      id: testIds.secondCourse,
+      code: "GE - BACH",
+      name: "General Education",
+      degreeType: "GENERAL_EDUCATION",
+    });
+    prismaMocks.degreeProgram.findUnique.mockResolvedValue({
+      generalEducationProgram,
+    });
+
+    const response = await request(app).get(
+      `/api/programs/${testIds.program}/general-education`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ data: generalEducationProgram });
+    expect(prismaMocks.degreeProgram.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: testIds.program } }),
+    );
+  });
+
+  it.each([
+    [null, "The requested major was not found."],
+    [{ generalEducationProgram: null }, "No general education program is configured for this major."],
+  ])("returns 404 when lookup data is unavailable", async (record, error) => {
+    prismaMocks.degreeProgram.findUnique.mockResolvedValue(record);
+
+    const response = await request(app).get(
+      `/api/programs/${testIds.program}/general-education`,
+    );
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error });
+  });
+
+  it("validates the major ID before querying the catalog", async () => {
+    expect((await request(app).get("/api/programs/not-a-uuid/general-education")).status).toBe(400);
+    expect(prismaMocks.degreeProgram.findUnique).not.toHaveBeenCalled();
   });
 });

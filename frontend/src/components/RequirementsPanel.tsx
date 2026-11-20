@@ -1,13 +1,20 @@
 import { useEffect, useId, useMemo, useState, type DragEvent } from "react";
 import {
   Course,
+  getMajorGeneralEducation,
   getProgramRequirementTree,
+  Program,
   RequirementNode,
 } from "../api/client";
 import { CourseDetailsModal } from "./CourseDetailsModal";
 import { PlanProgram } from "./PlanLibrary";
 
-type ProgramRequirements = { program: PlanProgram; groups: RequirementNode[] };
+type RequirementTab = {
+  id: string;
+  program: Program;
+  label: string;
+};
+type ProgramRequirements = { tab: RequirementTab; groups: RequirementNode[] };
 type CourseSelection = {
   course: Course;
   creditsOverride?: number | null;
@@ -145,7 +152,29 @@ async function loadProgramRequirements(
   program: PlanProgram,
 ): Promise<ProgramRequirements> {
   const result = await getProgramRequirementTree(program.program.id);
-  return { program, groups: result.data };
+  return {
+    tab: {
+      id: `program-${program.program.id}`,
+      program: program.program,
+      label: roleLabel(program.role),
+    },
+    groups: result.data,
+  };
+}
+
+async function loadGeneralEducationRequirements(
+  major: PlanProgram,
+): Promise<ProgramRequirements> {
+  const generalEducation = await getMajorGeneralEducation(major.program.id);
+  const result = await getProgramRequirementTree(generalEducation.data.id);
+  return {
+    tab: {
+      id: `general-education-${generalEducation.data.id}`,
+      program: generalEducation.data,
+      label: "General education",
+    },
+    groups: result.data,
+  };
 }
 
 export function RequirementsPanel({
@@ -158,7 +187,7 @@ export function RequirementsPanel({
   const [programRequirements, setProgramRequirements] = useState<
     ProgramRequirements[]
   >([]);
-  const [activeProgramId, setActiveProgramId] = useState<string | null>(null);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(
     new Set(),
   );
@@ -171,17 +200,19 @@ export function RequirementsPanel({
     .map(({ program, role }) => `${program.id}:${role}`)
     .join(",");
   const major = programs.find(({ role }) => role === "MAJOR") ?? programs[0];
-  const activeProgram =
-    programs.find(({ program }) => program.id === activeProgramId) ?? major;
+  const tabs = programRequirements.map(({ tab }) => tab);
+  const activeTab =
+    tabs.find(({ id }) => id === activeTabId) ?? tabs[0] ?? null;
   const activeRequirements = programRequirements.find(
-    ({ program }) => program.program.id === activeProgram?.program.id,
+    ({ tab }) => tab.id === activeTab?.id,
   );
 
   useEffect(() => {
-    setActiveProgramId((current) =>
-      programs.some(({ program }) => program.id === current)
+    setActiveTabId((current) =>
+      current?.startsWith("program-") &&
+      programs.some(({ program }) => `program-${program.id}` === current)
         ? current
-        : (major?.program.id ?? null),
+        : (major ? `program-${major.program.id}` : null),
     );
   }, [programKey, major?.program.id]);
 
@@ -195,7 +226,14 @@ export function RequirementsPanel({
     setLoading(true);
     setError(null);
     Promise.all(programs.map(loadProgramRequirements))
-      .then((result) => {
+      .then(async (result) => {
+        if (major) {
+          try {
+            result.unshift(await loadGeneralEducationRequirements(major));
+          } catch {
+            // Some catalog programs do not have a GE program assigned.
+          }
+        }
         if (!cancelled) {
           setProgramRequirements(result);
         }
@@ -243,28 +281,28 @@ export function RequirementsPanel({
             : `${programs.length} programs`}
         </span>
       </div>
-      {programs.length > 0 && (
+      {tabs.length > 0 && (
         <div
           className="program-tabs"
           role="tablist"
-          aria-label="Degree programs"
+          aria-label="Requirement categories"
         >
-          {programs.map((entry) => {
-            const selected = entry.program.id === activeProgram?.program.id;
+          {tabs.map((tab) => {
+            const selected = tab.id === activeTab?.id;
             return (
               <button
                 className="program-tab"
                 type="button"
                 role="tab"
-                key={`${entry.role}-${entry.program.id}`}
-                id={`program-tab-${entry.program.id}`}
+                key={tab.id}
+                id={`program-tab-${tab.id}`}
                 aria-selected={selected}
-                aria-controls={`program-panel-${entry.program.id}`}
+                aria-controls={`program-panel-${tab.id}`}
                 tabIndex={selected ? 0 : -1}
-                onClick={() => setActiveProgramId(entry.program.id)}
+                onClick={() => setActiveTabId(tab.id)}
               >
-                <span>{roleLabel(entry.role)}</span>
-                <strong>{entry.program.name}</strong>
+                <span>{tab.label}</span>
+                <strong>{tab.program.name}</strong>
               </button>
             );
           })}
@@ -272,15 +310,15 @@ export function RequirementsPanel({
       )}
       {loading && <p className="muted">Loading requirements…</p>}
       {error && <p className="error-message">{error}</p>}
-      {!loading && !error && !activeProgram && (
+      {!loading && !error && !activeTab && (
         <p className="muted">Choose a plan to view its requirements.</p>
       )}
-      {!loading && !error && activeProgram && (
+      {!loading && !error && activeTab && (
         <div
           className="program-requirements"
           role="tabpanel"
-          id={`program-panel-${activeProgram.program.id}`}
-          aria-labelledby={`program-tab-${activeProgram.program.id}`}
+          id={`program-panel-${activeTab.id}`}
+          aria-labelledby={`program-tab-${activeTab.id}`}
         >
           {selectedGroups.length ? (
             selectedGroups.map((group) => (
